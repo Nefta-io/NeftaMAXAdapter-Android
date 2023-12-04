@@ -18,7 +18,6 @@
         <meta-data
             android:name="applovin.sdk.key"
             android:value="IAhBswbDpMg9GhQ8NEKffzNrXQP1H4ABNFvUA7ePIz2xmarVFcy_VB8UfGnC9IPMOgpQ3p8G5hBMebJiTHv3P9" />
-        <meta-data android:name="com.nefta.sdk.ApplicationId" android:value="@string/nefta_app_id"/>
 
         <activity
             android:exported="true"

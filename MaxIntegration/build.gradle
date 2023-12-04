@@ -48,7 +48,7 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 
-    implementation files('libs/NeftaMaxAdapter-release-1.0.1.aar')
+    implementation files('libs/NeftaMaxAdapter-release-1.0.2.aar')
 
     if (isLocalAppLovinWorkspace) {
         implementation(project(":Android-SDK"))
