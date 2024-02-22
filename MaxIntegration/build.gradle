@@ -9,11 +9,11 @@ def isLocalAppLovinWorkspace = file("../../../Android-SDK/build.gradle.kts").exi
 
 android {
     namespace "com.applovin.enterprise.apps.demoapp"
-    compileSdkVersion 31
+    compileSdkVersion 33
     defaultConfig {
         applicationId "com.nefta.applovintest"
-        minSdkVersion 16
-        targetSdkVersion 31
+        minSdkVersion 19
+        targetSdkVersion 33
         versionCode 10000
         versionName "1.0"
         multiDexEnabled true
@@ -43,13 +43,14 @@ dependencies {
     implementation 'com.adjust.sdk:adjust-android:4.28.7'
     implementation 'com.android.installreferrer:installreferrer:2.2'
 
-    implementation 'com.google.android.gms:play-services-ads-identifier:17.1.0'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 
+    implementation 'com.google.android.gms:play-services-ads:22.5.0'
+
     implementation 'androidx.lifecycle:lifecycle-process:2.4.1'
-    implementation files('libs/NeftaMaxAdapter-debug-1.0.6.aar')
+    implementation files('libs/NeftaMaxAdapter-debug-1.1.0.aar')
 
     if (isLocalAppLovinWorkspace) {
         implementation(project(":Android-SDK"))
