@@ -46,7 +46,7 @@ dependencies {
     implementation 'com.google.android.gms:play-services-ads:22.5.0'
 
     implementation 'androidx.lifecycle:lifecycle-process:2.4.1'
-    implementation files('libs/NeftaMaxAdapter-debug-1.1.4.aar')
+    implementation files('libs/NeftaMaxAdapter-debug-1.1.5.aar')
 
     if (isLocalAppLovinWorkspace) {
         implementation(project(":Android-SDK"))
