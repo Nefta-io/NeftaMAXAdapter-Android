@@ -31,33 +31,28 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
         _loadAndShowButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                LoadAndShow();
+                _adView = new MaxAdView("f655876e93d11263", _activity);
+                _adView.setListener(BannerWrapper.this);
+                _adView.setRevenueListener(BannerWrapper.this);
+                _bannerGroup.addView(_adView.getRootView());
+                _adView.loadAd();
+
+                _loadAndShowButton.setEnabled(false);
             }
         });
         _closeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Close();
+                _adView.stopAutoRefresh();
+                _bannerGroup.removeView(_adView);
+                _adView.destroy();
+                _adView = null;
+
+                _loadAndShowButton.setEnabled(true);
+                _closeButton.setEnabled(false);
             }
         });
 
-        _closeButton.setEnabled(false);
-    }
-    private void LoadAndShow() {
-        _adView = new MaxAdView("4c659b0149dbfbae", _activity);
-        _adView.setListener(this);
-        _adView.setRevenueListener(this);
-        _bannerGroup.addView(_adView.getRootView());
-        _adView.loadAd();
-
-        _loadAndShowButton.setEnabled(false);
-    }
-
-    private void Close() {
-        _adView.destroy();
-        _adView = null;
-
-        _loadAndShowButton.setEnabled(true);
         _closeButton.setEnabled(false);
     }
 
@@ -113,6 +108,6 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
 
     @Override
     public void onAdRevenuePaid(final MaxAd ad) {
-        Log.i(TAG, "onAdRevenuePaid"+ ad.getAdUnitId() + ": " + ad.getRevenue());
+        Log.i(TAG, "onAdRevenuePaid "+ ad.getAdUnitId() + ": " + ad.getRevenue());
     }
 }

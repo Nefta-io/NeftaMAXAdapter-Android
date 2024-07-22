@@ -17,27 +17,33 @@ import com.applovin.mediation.ads.MaxRewardedAd;
 public class RewardedVideoWrapper implements MaxRewardedAdListener, MaxAdRevenueListener {
     private final String TAG = "REWARDED_VIDEO";
     private Activity _activity;
-    private Button _loadAndShowButton;
+    private Button _loadButton;
+    private Button _showButton;
     MaxRewardedAd _rewardedAd;
 
-    public RewardedVideoWrapper(Activity activity, Button loadAndShowButton) {
+    public RewardedVideoWrapper(Activity activity, Button loadButton, Button showButton) {
         _activity = activity;
-        _loadAndShowButton = loadAndShowButton;
-        _loadAndShowButton.setOnClickListener(new View.OnClickListener() {
+        _loadButton = loadButton;
+        _showButton = showButton;
+        _loadButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                LoadAndShow();
+                _rewardedAd = MaxRewardedAd.getInstance("72458470d47ee781", _activity);
+                _rewardedAd.setListener(RewardedVideoWrapper.this);
+                _rewardedAd.setRevenueListener(RewardedVideoWrapper.this);
+                _rewardedAd.loadAd();
             }
         });
-    }
+        _showButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                _rewardedAd.showAd(_activity);
 
-    private void LoadAndShow() {
-        _rewardedAd = MaxRewardedAd.getInstance("c9e2d5925100354c", _activity);
-        _rewardedAd.setListener(this);
-        _rewardedAd.setRevenueListener(this);
-        _rewardedAd.loadAd();
+                _showButton.setEnabled(false);
+            }
+        });
 
-        _loadAndShowButton.setEnabled(false);
+        _showButton.setEnabled(false);
     }
 
     @Override
@@ -49,7 +55,7 @@ public class RewardedVideoWrapper implements MaxRewardedAdListener, MaxAdRevenue
     public void onAdLoaded(@NonNull MaxAd ad) {
         Log.i(TAG, "onAdLoaded "+ ad.getAdUnitId());
 
-        _rewardedAd.showAd();
+        _showButton.setEnabled(true);
     }
 
     @Override
@@ -60,8 +66,6 @@ public class RewardedVideoWrapper implements MaxRewardedAdListener, MaxAdRevenue
     @Override
     public void onAdHidden(@NonNull MaxAd ad) {
         Log.i(TAG, "onAdHidden "+ ad.getAdUnitId());
-
-        _loadAndShowButton.setEnabled(true);
     }
 
     @Override
@@ -72,15 +76,11 @@ public class RewardedVideoWrapper implements MaxRewardedAdListener, MaxAdRevenue
     @Override
     public void onAdLoadFailed(@NonNull String adUnitId, @NonNull MaxError maxError) {
         Log.i(TAG, "onAdLoadFailed "+ adUnitId);
-
-        _loadAndShowButton.setEnabled(true);
     }
 
     @Override
     public void onAdDisplayFailed(@NonNull MaxAd ad, @NonNull MaxError maxError) {
         Log.i(TAG, "onAdDisplayFailed "+ ad.getAdUnitId());
-
-        _loadAndShowButton.setEnabled(true);
     }
 
     @Override

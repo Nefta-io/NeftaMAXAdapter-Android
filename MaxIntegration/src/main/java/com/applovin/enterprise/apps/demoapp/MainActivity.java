@@ -1,8 +1,6 @@
 package com.applovin.enterprise.apps.demoapp;
 
 import android.os.Bundle;
-import android.view.View;
-import android.view.ViewGroup;
 
 import com.applovin.sdk.AppLovinMediationProvider;
 import com.applovin.sdk.AppLovinSdk;
@@ -33,12 +31,12 @@ public class MainActivity extends AppCompatActivity {
         AppLovinSdk.getInstance( this ).initialize( initConfig, new AppLovinSdk.SdkInitializationListener() {
             @Override
             public void onSdkInitialized(final AppLovinSdkConfiguration sdkConfig) {
-
+                AppLovinSdk.getInstance(MainActivity.this).getSettings().setVerboseLogging(true);
             }
         });
 
         _bannerWrapper = new BannerWrapper(this, findViewById(R.id.bannerView), findViewById(R.id.showBanner), findViewById(R.id.closeBanner));
-        _interstitialWrapper = new InterstitialWrapper(this, findViewById(R.id.showInterstitial));
-        _rewardedVideoWrapper = new RewardedVideoWrapper(this, findViewById(R.id.showRewardedVideo));
+        _interstitialWrapper = new InterstitialWrapper(this, findViewById(R.id.loadInterstitial), findViewById(R.id.showInterstitial));
+        _rewardedVideoWrapper = new RewardedVideoWrapper(this, findViewById(R.id.loadRewardedVideo), findViewById(R.id.showRewardedVideo));
     }
 }

@@ -2,4 +2,4 @@
 
 Nefta SDK Nefta Ad Network and example integration project.
 
-Complete integration guide: https://docs-adnetwork.nefta.io/docs/max-android
+Complete integration guide: https://docs.nefta.io/docs/max-android
