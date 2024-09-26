@@ -43,6 +43,16 @@ dependencies {
     implementation 'com.google.android.gms:play-services-ads:22.5.0'
 
     implementation 'androidx.lifecycle:lifecycle-process:2.4.1'
-    implementation files('libs/NeftaMaxAdapter-debug.aar')
+implementation files('libs/NeftaMaxAdapter-debug.aar')
     implementation("com.applovin:applovin-sdk:+@aar")
 }
+
+
+
+
+
+
+
+
+
+
