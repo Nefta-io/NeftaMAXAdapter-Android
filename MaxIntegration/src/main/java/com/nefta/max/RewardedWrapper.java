@@ -1,4 +1,4 @@
-package com.applovin.enterprise.apps.demoapp;
+package com.nefta.max;
 
 import android.app.Activity;
 import android.util.Log;
@@ -14,14 +14,14 @@ import com.applovin.mediation.MaxReward;
 import com.applovin.mediation.MaxRewardedAdListener;
 import com.applovin.mediation.ads.MaxRewardedAd;
 
-public class RewardedVideoWrapper implements MaxRewardedAdListener, MaxAdRevenueListener {
+public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListener {
     private final String TAG = "REWARDED_VIDEO";
     private Activity _activity;
     private Button _loadButton;
     private Button _showButton;
     MaxRewardedAd _rewardedAd;
 
-    public RewardedVideoWrapper(Activity activity, Button loadButton, Button showButton) {
+    public RewardedWrapper(Activity activity, Button loadButton, Button showButton) {
         _activity = activity;
         _loadButton = loadButton;
         _showButton = showButton;
@@ -29,8 +29,8 @@ public class RewardedVideoWrapper implements MaxRewardedAdListener, MaxAdRevenue
             @Override
             public void onClick(View v) {
                 _rewardedAd = MaxRewardedAd.getInstance("72458470d47ee781", _activity);
-                _rewardedAd.setListener(RewardedVideoWrapper.this);
-                _rewardedAd.setRevenueListener(RewardedVideoWrapper.this);
+                _rewardedAd.setListener(RewardedWrapper.this);
+                _rewardedAd.setRevenueListener(RewardedWrapper.this);
                 _rewardedAd.loadAd();
             }
         });

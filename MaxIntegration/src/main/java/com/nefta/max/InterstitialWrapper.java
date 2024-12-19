@@ -1,4 +1,4 @@
-package com.applovin.enterprise.apps.demoapp;
+package com.nefta.max;
 
 import android.app.Activity;
 import android.util.Log;

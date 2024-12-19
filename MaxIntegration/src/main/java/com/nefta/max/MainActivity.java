@@ -1,4 +1,4 @@
-package com.applovin.enterprise.apps.demoapp;
+package com.nefta.max;
 
 import android.os.Bundle;
 
@@ -8,16 +8,8 @@ import com.applovin.sdk.AppLovinSdkConfiguration;
 import com.applovin.sdk.AppLovinSdkInitializationConfiguration;
 import com.nefta.sdk.NeftaPlugin;
 
-
 import androidx.appcompat.app.AppCompatActivity;
-
-
 public class MainActivity extends AppCompatActivity {
-
-    private BannerWrapper _bannerWrapper;
-    private InterstitialWrapper _interstitialWrapper;
-    private RewardedVideoWrapper _rewardedVideoWrapper;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate( savedInstanceState );
@@ -35,8 +27,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        _bannerWrapper = new BannerWrapper(this, findViewById(R.id.bannerView), findViewById(R.id.showBanner), findViewById(R.id.closeBanner));
-        _interstitialWrapper = new InterstitialWrapper(this, findViewById(R.id.loadInterstitial), findViewById(R.id.showInterstitial));
-        _rewardedVideoWrapper = new RewardedVideoWrapper(this, findViewById(R.id.loadRewardedVideo), findViewById(R.id.showRewardedVideo));
+        new BannerWrapper(this, findViewById(R.id.bannerView), findViewById(R.id.showBanner), findViewById(R.id.closeBanner));
+        new InterstitialWrapper(this, findViewById(R.id.loadInterstitial), findViewById(R.id.showInterstitial));
+        new RewardedWrapper(this, findViewById(R.id.loadRewardedVideo), findViewById(R.id.showRewardedVideo));
     }
 }
