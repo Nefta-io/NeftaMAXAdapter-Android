@@ -13,6 +13,7 @@ import com.applovin.mediation.MaxAd;
 import com.applovin.mediation.MaxAdRevenueListener;
 import com.applovin.mediation.MaxAdViewAdListener;
 import com.applovin.mediation.MaxError;
+import com.applovin.mediation.adapters.NeftaMediationAdapter;
 import com.applovin.mediation.ads.MaxAdView;
 
 class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
@@ -109,5 +110,6 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
     @Override
     public void onAdRevenuePaid(final MaxAd ad) {
         Log.i(TAG, "onAdRevenuePaid "+ ad.getAdUnitId() + ": " + ad.getRevenue());
+        NeftaMediationAdapter.OnExternalAdShown(ad);
     }
 }

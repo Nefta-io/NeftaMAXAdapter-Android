@@ -12,6 +12,7 @@ import com.applovin.mediation.MaxAdRevenueListener;
 import com.applovin.mediation.MaxError;
 import com.applovin.mediation.MaxReward;
 import com.applovin.mediation.MaxRewardedAdListener;
+import com.applovin.mediation.adapters.NeftaMediationAdapter;
 import com.applovin.mediation.ads.MaxRewardedAd;
 
 public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListener {
@@ -61,6 +62,7 @@ public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListe
     @Override
     public void onAdDisplayed(@NonNull MaxAd ad) {
         Log.i(TAG, "onAdDisplayed "+ ad.getAdUnitId());
+        NeftaMediationAdapter.OnExternalAdShown(ad);
     }
 
     @Override
