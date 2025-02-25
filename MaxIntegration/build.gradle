@@ -1,8 +1,4 @@
 apply plugin: 'com.android.application'
-apply plugin: 'applovin-quality-service'
-applovin {
-    apiKey "wFKZ0Iph29XmL9c4uBtq7x046oH4IDePcQQQXnlXTKLB8JHmThdoLkmWJ6xWnazGcVsKQR7cpTVM84RXHwHMnX"
-}
 android {
     namespace "com.nefta.max"
     compileSdkVersion 33
@@ -10,8 +6,8 @@ android {
         applicationId "com.nefta.max"
         minSdkVersion 21
         targetSdkVersion 33
-        versionCode 119
-        versionName "2.1.0"
+        versionCode 123
+        versionName "2.1.1"
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -28,7 +24,6 @@ android {
     }
 }
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
     implementation 'com.adjust.sdk:adjust-android:4.28.7'

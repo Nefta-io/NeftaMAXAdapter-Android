@@ -61,6 +61,8 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
     public void onAdLoaded(final MaxAd ad) {
         Log.i(TAG, "onAdLoaded "+ ad);
         _closeButton.setEnabled(true);
+
+        NeftaMediationAdapter.OnExternalAdLoad(NeftaMediationAdapter.AdType.Banner, 0.3, 0.4);
     }
 
     @Override
@@ -69,6 +71,8 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
 
         _loadAndShowButton.setEnabled(true);
         _closeButton.setEnabled(false);
+
+        NeftaMediationAdapter.OnExternalAdFail(NeftaMediationAdapter.AdType.Banner, 0.5, 0.6, error);
     }
 
     @Override
