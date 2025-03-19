@@ -2,6 +2,7 @@ package com.nefta.max;
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 
@@ -25,6 +26,14 @@ public class MainActivity extends AppCompatActivity {
         setContentView( R.layout.activity_main );
 
         NeftaPlugin.EnableLogging(true);
+        Intent intent = getIntent();
+        if (intent != null && intent.getExtras() != null) {
+            String override = intent.getStringExtra("override");
+            if (override != null && override.length() > 2) {
+                NeftaPlugin.SetOverride(override);
+            }
+        }
+
         NeftaPlugin.Init(this, "5643649824063488");
 
         SetTracking();
@@ -66,7 +75,9 @@ public class MainActivity extends AppCompatActivity {
         AppLovinSdkInitializationConfiguration initConfig = AppLovinSdkInitializationConfiguration.builder( "IAhBswbDpMg9GhQ8NEKffzNrXQP1H4ABNFvUA7ePIz2xmarVFcy_VB8UfGnC9IPMOgpQ3p8G5hBMebJiTHv3P9", this )
                 .setMediationProvider( AppLovinMediationProvider.MAX )
                 .build();
-        AppLovinSdk.getInstance( this ).initialize( initConfig, new AppLovinSdk.SdkInitializationListener() {
+
+        AppLovinSdk sdk = AppLovinSdk.getInstance( this );
+        sdk.initialize( initConfig, new AppLovinSdk.SdkInitializationListener() {
             @Override
             public void onSdkInitialized(final AppLovinSdkConfiguration sdkConfig) {
                 AppLovinSdk.getInstance(MainActivity.this).getSettings().setVerboseLogging(true);

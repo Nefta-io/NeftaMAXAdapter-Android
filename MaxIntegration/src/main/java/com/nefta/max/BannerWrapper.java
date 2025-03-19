@@ -62,7 +62,7 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
         Log.i(TAG, "onAdLoaded "+ ad);
         _closeButton.setEnabled(true);
 
-        NeftaMediationAdapter.OnExternalAdLoad(NeftaMediationAdapter.AdType.Banner, 0.3, 0.4);
+        NeftaMediationAdapter.OnExternalMediationRequestLoaded(NeftaMediationAdapter.AdType.Banner, 0.3, 0.4, ad);
     }
 
     @Override
@@ -72,7 +72,7 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
         _loadAndShowButton.setEnabled(true);
         _closeButton.setEnabled(false);
 
-        NeftaMediationAdapter.OnExternalAdFail(NeftaMediationAdapter.AdType.Banner, 0.5, 0.6, error);
+        NeftaMediationAdapter.OnExternalMediationRequestFailed(NeftaMediationAdapter.AdType.Banner, 0.5, 0.6, adUnitId, error);
     }
 
     @Override
@@ -114,6 +114,6 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
     @Override
     public void onAdRevenuePaid(final MaxAd ad) {
         Log.i(TAG, "onAdRevenuePaid "+ ad.getAdUnitId() + ": " + ad.getRevenue());
-        NeftaMediationAdapter.OnExternalAdShown(ad);
+        NeftaMediationAdapter.OnExternalMediationImpression(ad);
     }
 }

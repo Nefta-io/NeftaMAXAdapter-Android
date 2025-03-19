@@ -57,12 +57,14 @@ public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListe
         Log.i(TAG, "onAdLoaded "+ ad.getAdUnitId());
 
         _showButton.setEnabled(true);
+
+        NeftaMediationAdapter.OnExternalMediationRequestLoaded(NeftaMediationAdapter.AdType.Banner, 2.3, 2.4, ad);
     }
 
     @Override
     public void onAdDisplayed(@NonNull MaxAd ad) {
         Log.i(TAG, "onAdDisplayed "+ ad.getAdUnitId());
-        NeftaMediationAdapter.OnExternalAdShown(ad);
+        NeftaMediationAdapter.OnExternalMediationImpression(ad);
     }
 
     @Override
@@ -78,6 +80,8 @@ public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListe
     @Override
     public void onAdLoadFailed(@NonNull String adUnitId, @NonNull MaxError maxError) {
         Log.i(TAG, "onAdLoadFailed "+ adUnitId);
+
+        NeftaMediationAdapter.OnExternalMediationRequestFailed(NeftaMediationAdapter.AdType.Banner, 0.3, 0.4, adUnitId, maxError);
     }
 
     @Override

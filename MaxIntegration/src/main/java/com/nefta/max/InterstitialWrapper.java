@@ -52,12 +52,14 @@ class InterstitialWrapper implements MaxAdListener, MaxAdRevenueListener {
         Log.i(TAG, "onAdLoaded "+ ad.getAdUnitId());
 
         _showButton.setEnabled(true);
+
+        NeftaMediationAdapter.OnExternalMediationRequestLoaded(NeftaMediationAdapter.AdType.Interstitial, 1.3, 1.4, ad);
     }
 
     @Override
     public void onAdDisplayed(@NonNull MaxAd ad) {
         Log.i(TAG, "onAdDisplayed"+ ad.getAdUnitId());
-        NeftaMediationAdapter.OnExternalAdShown(ad);
+        NeftaMediationAdapter.OnExternalMediationImpression(ad);
     }
 
     @Override
@@ -73,6 +75,8 @@ class InterstitialWrapper implements MaxAdListener, MaxAdRevenueListener {
     @Override
     public void onAdLoadFailed(@NonNull String adUnitId, @NonNull MaxError maxError) {
         Log.i(TAG, "onAdLoadFailed "+ adUnitId);
+
+        NeftaMediationAdapter.OnExternalMediationRequestFailed(NeftaMediationAdapter.AdType.Interstitial, 1.3, 1.4, adUnitId, maxError);
     }
 
     @Override
