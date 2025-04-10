@@ -20,12 +20,15 @@ public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListe
     private Activity _activity;
     private Button _loadButton;
     private Button _showButton;
+    private final MainActivity.IOnFullScreenAdDisplay _onFullScreenAdDisplay;
     MaxRewardedAd _rewardedAd;
 
-    public RewardedWrapper(Activity activity, Button loadButton, Button showButton) {
+    public RewardedWrapper(Activity activity, Button loadButton, Button showButton, MainActivity.IOnFullScreenAdDisplay onFullScreenAdDisplay) {
         _activity = activity;
         _loadButton = loadButton;
         _showButton = showButton;
+        _onFullScreenAdDisplay = onFullScreenAdDisplay;
+
         _loadButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -65,11 +68,13 @@ public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListe
     public void onAdDisplayed(@NonNull MaxAd ad) {
         Log.i(TAG, "onAdDisplayed "+ ad.getAdUnitId());
         NeftaMediationAdapter.OnExternalMediationImpression(ad);
+        _onFullScreenAdDisplay.invoke(true);
     }
 
     @Override
     public void onAdHidden(@NonNull MaxAd ad) {
         Log.i(TAG, "onAdHidden "+ ad.getAdUnitId());
+        _onFullScreenAdDisplay.invoke(false);
     }
 
     @Override

@@ -19,12 +19,14 @@ class InterstitialWrapper implements MaxAdListener, MaxAdRevenueListener {
     private Activity _activity;
     private Button _loadButton;
     private Button _showButton;
+    private final MainActivity.IOnFullScreenAdDisplay _onFullScreenAdDisplay;
     MaxInterstitialAd _interstitial;
 
-    public InterstitialWrapper(Activity activity, Button loadButton, Button showButton) {
+    public InterstitialWrapper(Activity activity, Button loadButton, Button showButton, MainActivity.IOnFullScreenAdDisplay onFullScreenAdDisplay) {
         _activity = activity;
         _loadButton = loadButton;
         _showButton = showButton;
+        _onFullScreenAdDisplay = onFullScreenAdDisplay;
 
         _loadButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -60,11 +62,13 @@ class InterstitialWrapper implements MaxAdListener, MaxAdRevenueListener {
     public void onAdDisplayed(@NonNull MaxAd ad) {
         Log.i(TAG, "onAdDisplayed"+ ad.getAdUnitId());
         NeftaMediationAdapter.OnExternalMediationImpression(ad);
+        _onFullScreenAdDisplay.invoke(true);
     }
 
     @Override
     public void onAdHidden(@NonNull MaxAd ad) {
         Log.i(TAG, "onAdHidden "+ ad.getAdUnitId());
+        _onFullScreenAdDisplay.invoke(false);
     }
 
     @Override

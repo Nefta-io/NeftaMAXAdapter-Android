@@ -1,7 +1,6 @@
 package com.nefta.max;
 
 import android.app.Activity;
-import android.content.Context;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,6 +28,7 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
         _bannerGroup = bannerGroup;
         _loadAndShowButton = loadAndShowButton;
         _closeButton = closeButton;
+
         _loadAndShowButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -55,6 +55,16 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
         });
 
         _closeButton.setEnabled(false);
+    }
+
+    public void SetAutoRefresh(boolean refresh) {
+        if (_adView != null) {
+            if (refresh) {
+                _adView.stopAutoRefresh();
+            } else {
+                _adView.stopAutoRefresh();
+            }
+        }
     }
 
     @Override
