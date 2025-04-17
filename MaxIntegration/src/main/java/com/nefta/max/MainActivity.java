@@ -20,12 +20,6 @@ public class MainActivity extends AppCompatActivity {
     private final static String preferences = "preferences";
     private final static String trackingKey = "tracking";
 
-    interface IOnFullScreenAdDisplay {
-        void invoke(boolean displayed);
-    }
-
-    private BannerWrapper _bannerWrapper;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate( savedInstanceState );
@@ -90,12 +84,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        _bannerWrapper = new BannerWrapper(this, findViewById(R.id.bannerView), findViewById(R.id.showBanner), findViewById(R.id.closeBanner));
-        new InterstitialWrapper(this, findViewById(R.id.loadInterstitial), findViewById(R.id.showInterstitial), this::OnFullScreenAdDisplay);
-        new RewardedWrapper(this, findViewById(R.id.loadRewardedVideo), findViewById(R.id.showRewardedVideo), this::OnFullScreenAdDisplay);
-    }
-
-    private void OnFullScreenAdDisplay(boolean displayed) {
-        _bannerWrapper.SetAutoRefresh(!displayed);
+        new BannerWrapper(this, findViewById(R.id.bannerView), findViewById(R.id.showBanner), findViewById(R.id.closeBanner));
+        new InterstitialWrapper(this, findViewById(R.id.loadInterstitial), findViewById(R.id.showInterstitial));
+        new RewardedWrapper(this, findViewById(R.id.loadRewardedVideo), findViewById(R.id.showRewardedVideo));
     }
 }
