@@ -57,6 +57,16 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
         _closeButton.setEnabled(false);
     }
 
+    public void SetAutoRefresh(boolean refresh) {
+        if (_adView != null) {
+            if (refresh) {
+                _adView.stopAutoRefresh();
+            } else {
+                _adView.stopAutoRefresh();
+            }
+        }
+    }
+
     @Override
     public void onAdLoaded(final MaxAd ad) {
         Log.i(TAG, "onAdLoaded "+ ad);
