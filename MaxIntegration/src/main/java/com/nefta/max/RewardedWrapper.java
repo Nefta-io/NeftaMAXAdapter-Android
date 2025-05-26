@@ -28,17 +28,17 @@ public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListe
     private final String AdUnitIdInsightName = "recommended_rewarded_ad_unit_id";
     private final String FloorPriceInsightName = "calculated_user_floor_price_rewarded";
 
+    MaxRewardedAd _rewardedAd;
     private String _recommendedAdUnitId;
     private double _calculatedBidFloor;
     private boolean _isLoadRequested;
+
 
     private Activity _activity;
     private Button _loadButton;
     private Button _showButton;
     private final MainActivity.IOnFullScreenAdDisplay _onFullScreenAdDisplay;
     private Handler _handler;
-
-    private MaxRewardedAd _rewardedAd;
 
     private void GetInsightsAndLoad() {
         _isLoadRequested = true;
@@ -79,9 +79,9 @@ public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListe
             adUnitId = _recommendedAdUnitId;
         }
 
-        Log.i(TAG, "Loading Rewarded "+ adUnitId);
+        Log.i(TAG, "Loading Interstitial "+ adUnitId);
 
-        _rewardedAd = MaxRewardedAd.getInstance(adUnitId, _activity);
+        _rewardedAd = MaxRewardedAd.getInstance(adUnitId);
         _rewardedAd.setListener(RewardedWrapper.this);
         _rewardedAd.setRevenueListener(RewardedWrapper.this);
         _rewardedAd.loadAd();

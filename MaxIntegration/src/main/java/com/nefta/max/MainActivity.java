@@ -4,7 +4,16 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
+import android.graphics.Point;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
+import android.util.Log;
+import android.view.Display;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.widget.FrameLayout;
 
 import com.applovin.sdk.AppLovinMediationProvider;
 import com.applovin.sdk.AppLovinPrivacySettings;
@@ -24,12 +33,35 @@ public class MainActivity extends AppCompatActivity {
         void invoke(boolean displayed);
     }
 
+    private static boolean _isTablet;
+    private static FrameLayout _bannerPlaceholder;
+    private static FrameLayout _leaderPlaceholder;
+
+    public static ViewGroup GetBannerPlaceholder() {
+        return _isTablet ? _leaderPlaceholder : _bannerPlaceholder;
+    }
+
     private BannerWrapper _bannerWrapper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate( savedInstanceState );
         setContentView( R.layout.activity_main );
+
+        View view = findViewById(R.id.frameLayout);
+        _bannerPlaceholder = (FrameLayout) view.findViewById(R.id.bannerView);
+        _leaderPlaceholder = (FrameLayout) view.findViewById(R.id.leaderView);
+
+        WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        Display display = windowManager.getDefaultDisplay();
+        display.getMetrics(displayMetrics);
+        Point point = new Point();
+        display.getRealSize(point);
+        double diagonalInInches = Math.sqrt(Math.pow((double)point.x / displayMetrics.xdpi, 2) + Math.pow((double)point.y / displayMetrics.ydpi, 2));
+        _isTablet = diagonalInInches >= 6.5 && (getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >= Configuration.SCREENLAYOUT_SIZE_LARGE;
+        _bannerPlaceholder.setVisibility(_isTablet ? View.GONE : View.VISIBLE);
+        _leaderPlaceholder.setVisibility(_isTablet ? View.VISIBLE : View.GONE);
 
         NeftaPlugin.EnableLogging(true);
         Intent intent = getIntent();
@@ -78,11 +110,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void InitMax() {
-        AppLovinSdkInitializationConfiguration initConfig = AppLovinSdkInitializationConfiguration.builder( "IAhBswbDpMg9GhQ8NEKffzNrXQP1H4ABNFvUA7ePIz2xmarVFcy_VB8UfGnC9IPMOgpQ3p8G5hBMebJiTHv3P9", this )
+        AppLovinSdkInitializationConfiguration initConfig = AppLovinSdkInitializationConfiguration.builder( "IAhBswbDpMg9GhQ8NEKffzNrXQP1H4ABNFvUA7ePIz2xmarVFcy_VB8UfGnC9IPMOgpQ3p8G5hBMebJiTHv3P9" )
                 .setMediationProvider( AppLovinMediationProvider.MAX )
                 .build();
 
         AppLovinSdk sdk = AppLovinSdk.getInstance( this );
+
         sdk.initialize( initConfig, new AppLovinSdk.SdkInitializationListener() {
             @Override
             public void onSdkInitialized(final AppLovinSdkConfiguration sdkConfig) {
@@ -90,9 +123,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        _bannerWrapper = new BannerWrapper(this, findViewById(R.id.bannerView), findViewById(R.id.showBanner), findViewById(R.id.closeBanner));
+        _bannerWrapper = new BannerWrapper(this, findViewById(R.id.showBanner), findViewById(R.id.closeBanner));
         new InterstitialWrapper(this, findViewById(R.id.loadInterstitial), findViewById(R.id.showInterstitial), this::OnFullScreenAdDisplay);
-        new RewardedWrapper(this, findViewById(R.id.loadRewardedVideo), findViewById(R.id.showRewardedVideo), this::OnFullScreenAdDisplay);
+        new RewardedWrapper(this, findViewById(R.id.loadRewarded), findViewById(R.id.showRewarded), this::OnFullScreenAdDisplay);
     }
 
     private void OnFullScreenAdDisplay(boolean displayed) {

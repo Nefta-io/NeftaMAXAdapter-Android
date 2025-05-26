@@ -32,7 +32,6 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
     private boolean _isLoadRequested;
 
     private Activity _activity;
-    private ViewGroup _bannerGroup;
     private Button _loadAndShowButton;
     private Button _closeButton;
     private Handler _handler;
@@ -80,10 +79,10 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
 
         Log.i(TAG, "Loading Banner "+ adUnitId);
 
-        _adView = new MaxAdView(adUnitId, _activity);
+        _adView = new MaxAdView(adUnitId);
         _adView.setListener(BannerWrapper.this);
         _adView.setRevenueListener(BannerWrapper.this);
-        _bannerGroup.addView(_adView.getRootView());
+        MainActivity.GetBannerPlaceholder().addView(_adView.getRootView());
         _adView.loadAd();
 
         _loadAndShowButton.setEnabled(false);
@@ -108,9 +107,8 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
         _closeButton.setEnabled(true);
     }
 
-    public BannerWrapper(Activity activity, ViewGroup bannerGroup, Button loadAndShowButton, Button closeButton) {
+    public BannerWrapper(Activity activity, Button loadAndShowButton, Button closeButton) {
         _activity = activity;
-        _bannerGroup = bannerGroup;
         _loadAndShowButton = loadAndShowButton;
         _closeButton = closeButton;
 
@@ -128,7 +126,10 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
             @Override
             public void onClick(View v) {
                 _adView.stopAutoRefresh();
-                _bannerGroup.removeView(_adView);
+                ViewGroup parent = (ViewGroup) _adView.getParent();
+                if (parent != null) {
+                    parent.removeView(_adView);
+                }
                 _adView.destroy();
                 _adView = null;
 

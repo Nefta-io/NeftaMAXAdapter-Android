@@ -18,19 +18,20 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <FrameLayout
-            android:id="@+id/bannerWrapper"
-            android:layout_width="322dp"
-            android:layout_height="52dp"
+            android:id="@+id/bannerView"
+            android:layout_width="320dp"
+            android:layout_height="50dp"
             android:layout_gravity="center_horizontal"
-            android:background="#FF0000">
+            android:background="#FFFFFF" />
 
-            <FrameLayout
-                android:id="@+id/bannerView"
-                android:layout_width="320dp"
-                android:layout_height="50dp"
-                android:layout_gravity="center_horizontal"
-                android:layout_margin="1dp"
-                android:background="#FFFFFF" />
+        <FrameLayout
+            android:id="@+id/leaderView"
+            android:layout_width="728dp"
+            android:layout_height="90dp"
+            android:layout_gravity="center_horizontal"
+            android:background="#FFFFFF"
+            android:visibility="gone" >
+
         </FrameLayout>
 
         <TableLayout
@@ -50,7 +51,7 @@
                     android:background="@drawable/button"
                     android:gravity="center"
                     android:text="Show Banner"
-                    android:textColor="#000000" />
+                    android:textColor="@color/button_text" />
 
                 <Button
                     android:id="@+id/closeBanner"
@@ -60,7 +61,7 @@
                     android:background="@drawable/button"
                     android:foregroundGravity="center"
                     android:text="Close Banner"
-                    android:textColor="#000000" />
+                    android:textColor="@color/button_text" />
             </TableRow>
 
             <TableRow
@@ -75,7 +76,7 @@
                     android:background="@drawable/button"
                     android:foregroundGravity="center"
                     android:text="Load Interstitial"
-                    android:textColor="#000000" />
+                    android:textColor="@color/button_text" />
 
                 <Button
                     android:id="@+id/showInterstitial"
@@ -85,7 +86,7 @@
                     android:background="@drawable/button"
                     android:foregroundGravity="center"
                     android:text="Show Interstitial"
-                    android:textColor="#000000" />
+                    android:textColor="@color/button_text" />
             </TableRow>
 
             <TableRow
@@ -93,24 +94,24 @@
                 android:layout_height="match_parent">
 
                 <Button
-                    android:id="@+id/loadRewardedVideo"
+                    android:id="@+id/loadRewarded"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_margin="5dp"
                     android:background="@drawable/button"
                     android:foregroundGravity="center"
-                    android:text="Load rewarded video"
-                    android:textColor="#000000" />
+                    android:text="Load rewarded"
+                    android:textColor="@color/button_text" />
 
                 <Button
-                    android:id="@+id/showRewardedVideo"
+                    android:id="@+id/showRewarded"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_margin="5dp"
                     android:background="@drawable/button"
                     android:foregroundGravity="center"
-                    android:text="Show rewarded video"
-                    android:textColor="#000000" />
+                    android:text="Show rewarded"
+                    android:textColor="@color/button_text" />
             </TableRow>
 
         </TableLayout>
