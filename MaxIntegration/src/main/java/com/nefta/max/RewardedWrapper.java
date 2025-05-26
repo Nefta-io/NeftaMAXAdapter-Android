@@ -32,6 +32,7 @@ public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListe
     private String _recommendedAdUnitId;
     private double _calculatedBidFloor;
     private boolean _isLoadRequested;
+    private int _consecutiveAdFails;
 
 
     private Activity _activity;
@@ -96,8 +97,10 @@ public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListe
         _loadButton.setEnabled(true);
         _showButton.setEnabled(false);
 
-        // or automatically retry with a delay
-        //_handler.postDelayed(this::GetInsightsAndLoad, 5000);
+        _consecutiveAdFails++;
+        // As per MAX recommendations, retry with exponentially higher delays up to 64s
+        // In case you would like to customize fill rate / revenue please contact our customer support
+        _handler.postDelayed(this::GetInsightsAndLoad, new int[] { 0, 2, 4, 8, 32, 64 } [Math.min(_consecutiveAdFails, 5)] * 1000L);
     }
 
     @Override
@@ -106,6 +109,7 @@ public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListe
 
         Log.i(TAG, "onAdLoaded "+ ad.getAdUnitId());
 
+        _consecutiveAdFails = 0;
         _showButton.setEnabled(true);
     }
 
