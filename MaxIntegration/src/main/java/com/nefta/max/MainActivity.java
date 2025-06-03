@@ -123,7 +123,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        _bannerWrapper = new BannerWrapper(this, findViewById(R.id.showBanner), findViewById(R.id.closeBanner));
+        _bannerWrapper = new BannerWrapper(findViewById(R.id.showBanner), findViewById(R.id.closeBanner));
         new InterstitialWrapper(this, findViewById(R.id.loadInterstitial), findViewById(R.id.showInterstitial), this::OnFullScreenAdDisplay);
         new RewardedWrapper(this, findViewById(R.id.loadRewarded), findViewById(R.id.showRewarded), this::OnFullScreenAdDisplay);
     }

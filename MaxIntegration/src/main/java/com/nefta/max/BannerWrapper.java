@@ -1,6 +1,5 @@
 package com.nefta.max;
 
-import android.app.Activity;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -31,7 +30,6 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
     private double _calculatedBidFloor;
     private boolean _isLoadRequested;
 
-    private Activity _activity;
     private Button _loadAndShowButton;
     private Button _closeButton;
     private Handler _handler;
@@ -96,6 +94,8 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
 
         _loadAndShowButton.setEnabled(true);
         _closeButton.setEnabled(false);
+
+        //_handler.postDelayed(this::GetInsightsAndLoad, 5000);
     }
 
     @Override
@@ -107,8 +107,7 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
         _closeButton.setEnabled(true);
     }
 
-    public BannerWrapper(Activity activity, Button loadAndShowButton, Button closeButton) {
-        _activity = activity;
+    public BannerWrapper(Button loadAndShowButton, Button closeButton) {
         _loadAndShowButton = loadAndShowButton;
         _closeButton = closeButton;
 
