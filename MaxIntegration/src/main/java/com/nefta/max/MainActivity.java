@@ -14,6 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
+import android.widget.TextView;
 
 import com.applovin.sdk.AppLovinMediationProvider;
 import com.applovin.sdk.AppLovinPrivacySettings;
@@ -24,20 +25,19 @@ import com.nefta.sdk.NeftaPlugin;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+
 public class MainActivity extends AppCompatActivity {
 
+    private final String TAG = "NeftaPluginINT";
     private final static String preferences = "preferences";
     private final static String trackingKey = "tracking";
 
-    interface IOnFullScreenAdDisplay {
-        void invoke(boolean displayed);
-    }
-
     private static boolean _isTablet;
-    private static FrameLayout _bannerPlaceholder;
-    private static FrameLayout _leaderPlaceholder;
+    private FrameLayout _bannerPlaceholder;
+    private FrameLayout _leaderPlaceholder;
+    private TextView _status;
 
-    public static ViewGroup GetBannerPlaceholder() {
+    public ViewGroup GetBannerPlaceholder() {
         return _isTablet ? _leaderPlaceholder : _bannerPlaceholder;
     }
 
@@ -51,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
         View view = findViewById(R.id.frameLayout);
         _bannerPlaceholder = (FrameLayout) view.findViewById(R.id.bannerView);
         _leaderPlaceholder = (FrameLayout) view.findViewById(R.id.leaderView);
+        _status = findViewById(R.id.status);
 
         WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         DisplayMetrics displayMetrics = new DisplayMetrics();
@@ -72,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        NeftaPlugin.Init(this, "5643649824063488");
+        NeftaPlugin.Init(getApplicationContext(), "5643649824063488");
 
         SetTracking();
     }
@@ -110,12 +111,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void InitMax() {
+        String[] adUnits = new String[]{
+            // interstitials
+            "7267e7f4187b95b2", "00b665eda2658439", "87f1b4837da231e5",
+            // rewarded
+            "72458470d47ee781", "5305c7824f0b5e0a", "a4b93fe91b278c75"
+        };
+
+        AppLovinSdk sdk = AppLovinSdk.getInstance(this);
+        sdk.getSettings().setExtraParameter("disable_b2b_ad_unit_ids", String.join(",", adUnits));
         AppLovinSdkInitializationConfiguration initConfig = AppLovinSdkInitializationConfiguration.builder( "IAhBswbDpMg9GhQ8NEKffzNrXQP1H4ABNFvUA7ePIz2xmarVFcy_VB8UfGnC9IPMOgpQ3p8G5hBMebJiTHv3P9" )
                 .setMediationProvider( AppLovinMediationProvider.MAX )
                 .build();
-
-        AppLovinSdk sdk = AppLovinSdk.getInstance( this );
-
         sdk.initialize( initConfig, new AppLovinSdk.SdkInitializationListener() {
             @Override
             public void onSdkInitialized(final AppLovinSdkConfiguration sdkConfig) {
@@ -123,12 +130,17 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        _bannerWrapper = new BannerWrapper(findViewById(R.id.showBanner), findViewById(R.id.closeBanner));
-        new InterstitialWrapper(this, findViewById(R.id.loadInterstitial), findViewById(R.id.showInterstitial), this::OnFullScreenAdDisplay);
-        new RewardedWrapper(this, findViewById(R.id.loadRewarded), findViewById(R.id.showRewarded), this::OnFullScreenAdDisplay);
+        _bannerWrapper = new BannerWrapper(this, findViewById(R.id.showBanner), findViewById(R.id.closeBanner));
+        new InterstitialWrapper(this, findViewById(R.id.loadInterstitial), findViewById(R.id.showInterstitial));
+        new RewardedWrapper(this, findViewById(R.id.loadRewarded), findViewById(R.id.showRewarded));
     }
 
-    private void OnFullScreenAdDisplay(boolean displayed) {
+    void OnFullScreenAdDisplay(boolean displayed) {
         _bannerWrapper.SetAutoRefresh(!displayed);
+    }
+
+    void Log(String log) {
+        _status.setText(log);
+        Log.i(TAG, log);
     }
 }

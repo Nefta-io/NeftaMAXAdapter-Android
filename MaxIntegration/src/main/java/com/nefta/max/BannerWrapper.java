@@ -2,7 +2,6 @@ package com.nefta.max;
 
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -15,99 +14,70 @@ import com.applovin.mediation.MaxAdViewAdListener;
 import com.applovin.mediation.MaxError;
 import com.applovin.mediation.adapters.NeftaMediationAdapter;
 import com.applovin.mediation.ads.MaxAdView;
-import com.nefta.sdk.Insight;
+import com.nefta.sdk.AdInsight;
+import com.nefta.sdk.Insights;
 import com.nefta.sdk.NeftaPlugin;
-
-import java.util.HashMap;
 
 class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
     private final String DefaultAdUnitId = "f655876e93d11263";
-    private final String TAG = "BANNER";
-    private final String AdUnitIdInsightName = "recommended_banner_ad_unit_id";
-    private final String FloorPriceInsightName = "calculated_user_floor_price_banner";
+    private final int TimeoutInSeconds = 5;
 
-    private String _recommendedAdUnitId;
-    private double _calculatedBidFloor;
-    private boolean _isLoadRequested;
+    private MaxAdView _adView;
+    private AdInsight _usedInsight;
+    private int _consecutiveAdFails;
 
     private Button _loadAndShowButton;
     private Button _closeButton;
     private Handler _handler;
-
-    private MaxAdView _adView;
+    private MainActivity _activity;
 
     private void GetInsightsAndLoad() {
-        _isLoadRequested = true;
-
-        NeftaPlugin._instance.GetBehaviourInsight(new String[] { AdUnitIdInsightName, FloorPriceInsightName }, this::OnBehaviourInsight);
-
-        _handler.postDelayed(() -> {
-            if (_isLoadRequested) {
-                _recommendedAdUnitId = null;
-                _calculatedBidFloor = 0;
-                Load();
-            }
-        }, 5000);
+        NeftaPlugin._instance.GetInsights(Insights.BANNER, this::OnInsights, TimeoutInSeconds);
     }
 
-    private void OnBehaviourInsight(HashMap<String, Insight> insights) {
-        _recommendedAdUnitId = null;
-        _calculatedBidFloor = 0;
-        if (insights.containsKey(AdUnitIdInsightName)) {
-            _recommendedAdUnitId = insights.get(AdUnitIdInsightName)._string;
-        }
-        if (insights.containsKey(FloorPriceInsightName)) {
-            _calculatedBidFloor = insights.get(FloorPriceInsightName)._float;
+    private void OnInsights(Insights insights) {
+        String selectedAdUnitId = DefaultAdUnitId;
+        _usedInsight = insights._banner;
+        if (_usedInsight != null && _usedInsight._adUnit != null) {
+            selectedAdUnitId = _usedInsight._adUnit;
         }
 
-        Log.i(TAG, "OnBehaviourInsights for Banner: "+ _recommendedAdUnitId +", calculated bid floor: "+ _calculatedBidFloor);
-
-        if (_isLoadRequested) {
-            Load();
-        }
-    }
-
-    private void Load() {
-        _isLoadRequested = false;
-
-        String adUnitId = DefaultAdUnitId;
-        if (_recommendedAdUnitId != null && !_recommendedAdUnitId.isEmpty()) {
-            adUnitId = _recommendedAdUnitId;
-        }
-
-        Log.i(TAG, "Loading Banner "+ adUnitId);
-
-        _adView = new MaxAdView(adUnitId);
+        Log("Loading "+ selectedAdUnitId +" insights: "+ _usedInsight);
+        _adView = new MaxAdView(selectedAdUnitId);
         _adView.setListener(BannerWrapper.this);
         _adView.setRevenueListener(BannerWrapper.this);
-        MainActivity.GetBannerPlaceholder().addView(_adView.getRootView());
+        _adView.setExtraParameter("disable_auto_retries", "true");
+        _activity.GetBannerPlaceholder().addView(_adView.getRootView());
         _adView.loadAd();
-
-        _loadAndShowButton.setEnabled(false);
     }
 
     @Override
-    public void onAdLoadFailed(@NonNull final String adUnitId, @NonNull final MaxError error) {
-        NeftaMediationAdapter.OnExternalMediationRequestFailed(NeftaMediationAdapter.AdType.Banner, _recommendedAdUnitId, _calculatedBidFloor, adUnitId, error);
+    public void onAdLoadFailed(@NonNull final String adUnitId, @NonNull final MaxError maxError) {
+        NeftaMediationAdapter.OnExternalMediationRequestFailed(NeftaMediationAdapter.AdType.Banner, adUnitId, _usedInsight, maxError);
 
-        Log.i(TAG, "onAdLoadFailed "+ adUnitId);
+        Log("onAdLoadFailed "+ adUnitId);
 
-        _loadAndShowButton.setEnabled(true);
-        _closeButton.setEnabled(false);
+        _consecutiveAdFails++;
+        // As per MAX recommendations, retry with exponentially higher delays up to 64s
+        // In case you would like to customize fill rate / revenue please contact our customer support
+        int delayInSeconds = new int[] { 0, 2, 4, 8, 16, 32, 64 } [Math.min(_consecutiveAdFails, 6)];
 
-        //_handler.postDelayed(this::GetInsightsAndLoad, 5000);
+        _handler.postDelayed(this::GetInsightsAndLoad, delayInSeconds * 1000L);
     }
 
     @Override
     public void onAdLoaded(final MaxAd ad) {
-        NeftaMediationAdapter.OnExternalMediationRequestLoaded(NeftaMediationAdapter.AdType.Banner, _recommendedAdUnitId, _calculatedBidFloor, ad);
+        NeftaMediationAdapter.OnExternalMediationRequestLoaded(NeftaMediationAdapter.AdType.Banner, ad, _usedInsight);
 
-        Log.i(TAG, "onAdLoaded "+ ad);
+        Log("onAdLoaded "+ ad);
+
+        _consecutiveAdFails = 0;
 
         _closeButton.setEnabled(true);
     }
 
-    public BannerWrapper(Button loadAndShowButton, Button closeButton) {
+    public BannerWrapper(MainActivity activity, Button loadAndShowButton, Button closeButton) {
+        _activity = activity;
         _loadAndShowButton = loadAndShowButton;
         _closeButton = closeButton;
 
@@ -116,9 +86,9 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
         _loadAndShowButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Log("GetInsightsAndLoad...");
                 GetInsightsAndLoad();
-
-                Log.i(TAG, "Loading...");
+                loadAndShowButton.setEnabled(false);
             }
         });
         _closeButton.setOnClickListener(new View.OnClickListener() {
@@ -152,7 +122,7 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
 
     @Override
     public void onAdDisplayFailed(@NonNull final MaxAd ad, @NonNull final MaxError error) {
-        Log.i(TAG, "onAdDisplayFailed "+ ad.getAdUnitId());
+        Log("onAdDisplayFailed "+ ad.getAdUnitId());
 
         _loadAndShowButton.setEnabled(true);
         _closeButton.setEnabled(false);
@@ -160,22 +130,22 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
 
     @Override
     public void onAdClicked(@NonNull final MaxAd ad) {
-        Log.i(TAG, "onAdClicked "+ ad.getAdUnitId());
+        Log("onAdClicked "+ ad.getAdUnitId());
     }
 
     @Override
     public void onAdExpanded(@NonNull final MaxAd ad) {
-        Log.i(TAG, "onAdExpanded "+ ad.getAdUnitId());
+        Log("onAdExpanded "+ ad.getAdUnitId());
     }
 
     @Override
     public void onAdDisplayed(@NonNull MaxAd ad) {
-        Log.i(TAG, "onAdDisplayed "+ ad.getAdUnitId());
+        Log("onAdDisplayed "+ ad.getAdUnitId());
     }
 
     @Override
     public void onAdHidden(@NonNull MaxAd ad) {
-        Log.i(TAG, "onAdHidden "+ ad.getAdUnitId());
+        Log("onAdHidden "+ ad.getAdUnitId());
 
         _loadAndShowButton.setEnabled(true);
         _closeButton.setEnabled(false);
@@ -183,13 +153,17 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
 
     @Override
     public void onAdCollapsed(@NonNull final MaxAd ad) {
-        Log.i(TAG, "onAdCollapsed "+ ad.getAdUnitId());
+        Log("onAdCollapsed "+ ad.getAdUnitId());
     }
 
     @Override
     public void onAdRevenuePaid(final MaxAd ad) {
         NeftaMediationAdapter.OnExternalMediationImpression(ad);
 
-        Log.i(TAG, "onAdRevenuePaid "+ ad.getAdUnitId() + ": " + ad.getRevenue());
+        Log("onAdRevenuePaid "+ ad.getAdUnitId() + ": " + ad.getRevenue());
+    }
+
+    void Log(String log) {
+        _activity.Log("Banner " + log);
     }
 }

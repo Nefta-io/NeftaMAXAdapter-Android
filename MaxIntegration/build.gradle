@@ -6,8 +6,8 @@ android {
         applicationId "com.nefta.max"
         minSdkVersion 21
         targetSdkVersion 33
-        versionCode 185
-        versionName "2.2.7"
+        versionCode 196
+        versionName "4.3.0"
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -29,8 +29,8 @@ dependencies {
     implementation 'com.adjust.sdk:adjust-android:4.28.7'
     implementation 'com.android.installreferrer:installreferrer:2.2'
     implementation 'com.google.android.gms:play-services-ads:22.5.0'
-    implementation 'androidx.lifecycle:lifecycle-process:2.4.1'
     implementation 'com.google.android.material:material:1.1.0'
     implementation files('libs/NeftaMaxAdapter-release.aar')
+    implementation files('libs/NeftaPlugin-release.aar')
     implementation("com.applovin:applovin-sdk:+@aar")
 }
