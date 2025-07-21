@@ -6,7 +6,7 @@ android {
         applicationId "com.nefta.max"
         minSdkVersion 21
         targetSdkVersion 33
-        versionCode 196
+        versionCode 197
         versionName "4.3.0"
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -30,7 +30,7 @@ dependencies {
     implementation 'com.android.installreferrer:installreferrer:2.2'
     implementation 'com.google.android.gms:play-services-ads:22.5.0'
     implementation 'com.google.android.material:material:1.1.0'
-    implementation files('libs/NeftaMaxAdapter-release.aar')
-    implementation files('libs/NeftaPlugin-release.aar')
-    implementation("com.applovin:applovin-sdk:+@aar")
+    implementation 'com.nefta:nefta-sdk:4.3.0'
+    implementation 'com.nefta:nefta-sdk-max:4.3.0'
+    implementation 'com.applovin:applovin-sdk:+@aar'
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="button_enabled">#A626BF</color>
+    <color name="button_enabled">#7d3ba2</color>
     <color name="button_enabled_text">#FFFFFF</color>
-    <color name="button_disabled">#D0D5DD</color>
-    <color name="button_disabled_text">#344054</color>
+    <color name="button_disabled">#FFD3D3D3</color>
+    <color name="button_disabled_text">#000000</color>
 </resources>

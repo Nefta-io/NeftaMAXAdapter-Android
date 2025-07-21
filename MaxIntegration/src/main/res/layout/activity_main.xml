@@ -51,7 +51,7 @@
                     android:background="@drawable/button"
                     android:gravity="center"
                     android:text="Show Banner"
-                    android:textColor="@color/button_text" />
+                    android:textColor="@color/button_enabled_text" />
 
                 <Button
                     android:id="@+id/closeBanner"
@@ -61,7 +61,7 @@
                     android:background="@drawable/button"
                     android:foregroundGravity="center"
                     android:text="Close Banner"
-                    android:textColor="@color/button_text" />
+                    android:textColor="#FFFFFF" />
             </TableRow>
 
             <TableRow
@@ -76,7 +76,7 @@
                     android:background="@drawable/button"
                     android:foregroundGravity="center"
                     android:text="Load Interstitial"
-                    android:textColor="@color/button_text" />
+                    android:textColor="#FFFFFF" />
 
                 <Button
                     android:id="@+id/showInterstitial"
@@ -86,7 +86,7 @@
                     android:background="@drawable/button"
                     android:foregroundGravity="center"
                     android:text="Show Interstitial"
-                    android:textColor="@color/button_text" />
+                    android:textColor="#FFFFFF" />
             </TableRow>
 
             <TableRow
@@ -100,8 +100,8 @@
                     android:layout_margin="5dp"
                     android:background="@drawable/button"
                     android:foregroundGravity="center"
-                    android:text="Load rewarded"
-                    android:textColor="@color/button_text" />
+                    android:text="Load Rewarded"
+                    android:textColor="#FFFFFF" />
 
                 <Button
                     android:id="@+id/showRewarded"
@@ -110,8 +110,8 @@
                     android:layout_margin="5dp"
                     android:background="@drawable/button"
                     android:foregroundGravity="center"
-                    android:text="Show rewarded"
-                    android:textColor="@color/button_text" />
+                    android:text="Show Rewarded"
+                    android:textColor="#FFFFFF" />
 
             </TableRow>
 
@@ -126,7 +126,7 @@
                     android:layout_span="2"
                     android:singleLine="false"
                     android:text="Status"
-                    android:textColor="#000000" />
+                    android:textColor="#FFFFFF" />
             </TableRow>
 
         </TableLayout>
