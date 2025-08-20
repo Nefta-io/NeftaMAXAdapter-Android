@@ -93,15 +93,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
-                <Button
+                <Switch
                     android:id="@+id/loadRewarded"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_margin="5dp"
-                    android:background="@drawable/button"
-                    android:foregroundGravity="center"
-                    android:text="Load Rewarded"
-                    android:textColor="#FFFFFF" />
+                    android:text="Load Rewarded" />
 
                 <Button
                     android:id="@+id/showRewarded"

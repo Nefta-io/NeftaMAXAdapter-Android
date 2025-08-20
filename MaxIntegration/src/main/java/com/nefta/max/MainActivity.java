@@ -48,23 +48,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate( savedInstanceState );
         setContentView( R.layout.activity_main );
 
-        View view = findViewById(R.id.frameLayout);
-        _bannerPlaceholder = (FrameLayout) view.findViewById(R.id.bannerView);
-        _leaderPlaceholder = (FrameLayout) view.findViewById(R.id.leaderView);
         _status = findViewById(R.id.status);
 
-        WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        Display display = windowManager.getDefaultDisplay();
-        display.getMetrics(displayMetrics);
-        Point point = new Point();
-        display.getRealSize(point);
-        double diagonalInInches = Math.sqrt(Math.pow((double)point.x / displayMetrics.xdpi, 2) + Math.pow((double)point.y / displayMetrics.ydpi, 2));
-        _isTablet = diagonalInInches >= 6.5 && (getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >= Configuration.SCREENLAYOUT_SIZE_LARGE;
-        _bannerPlaceholder.setVisibility(_isTablet ? View.GONE : View.VISIBLE);
-        _leaderPlaceholder.setVisibility(_isTablet ? View.VISIBLE : View.GONE);
+        PrepareBanner();
 
-        NeftaPlugin.EnableLogging(true);
         Intent intent = getIntent();
         if (intent != null && intent.getExtras() != null) {
             String override = intent.getStringExtra("override");
@@ -73,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+        NeftaPlugin.EnableLogging(true);
         NeftaPlugin.Init(getApplicationContext(), "5643649824063488");
 
         SetTracking();
@@ -137,6 +125,22 @@ public class MainActivity extends AppCompatActivity {
 
     void OnFullScreenAdDisplay(boolean displayed) {
         _bannerWrapper.SetAutoRefresh(!displayed);
+    }
+
+    private void PrepareBanner() {
+        View view = findViewById(R.id.frameLayout);
+        _bannerPlaceholder = (FrameLayout) view.findViewById(R.id.bannerView);
+        _leaderPlaceholder = (FrameLayout) view.findViewById(R.id.leaderView);
+        WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        Display display = windowManager.getDefaultDisplay();
+        display.getMetrics(displayMetrics);
+        Point point = new Point();
+        display.getRealSize(point);
+        double diagonalInInches = Math.sqrt(Math.pow((double)point.x / displayMetrics.xdpi, 2) + Math.pow((double)point.y / displayMetrics.ydpi, 2));
+        _isTablet = diagonalInInches >= 6.5 && (getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >= Configuration.SCREENLAYOUT_SIZE_LARGE;
+        _bannerPlaceholder.setVisibility(_isTablet ? View.GONE : View.VISIBLE);
+        _leaderPlaceholder.setVisibility(_isTablet ? View.VISIBLE : View.GONE);
     }
 
     void Log(String log) {
