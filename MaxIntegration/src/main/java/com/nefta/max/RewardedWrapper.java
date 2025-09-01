@@ -24,14 +24,16 @@ import com.nefta.sdk.NeftaPlugin;
 import java.util.Locale;
 
 public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListener, MaxAdExpirationListener {
-    private final String DefaultAdUnitId = "72458470d47ee781";
     private final String DynamicAdUnitId = "a4b93fe91b278c75";
+    private final String DefaultAdUnitId = "72458470d47ee781";
     private final int TimeoutInSeconds = 5;
 
-    private MaxRewardedAd _defaultRewarded;
     private MaxRewardedAd _dynamicRewarded;
+    private boolean _isDynamicLoaded;
     private AdInsight _dynamicAdUnitInsight;
     private int _consecutiveDynamicBidAdFails;
+    private MaxRewardedAd _defaultRewarded;
+    private boolean _isDefaultLoaded;
 
     private MainActivity _activity;
     private Switch _loadSwitch;
@@ -111,10 +113,12 @@ public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListe
             Log("Loaded Dynamic " + ad.getAdUnitId() + ": " + ad.getRevenue());
 
             _consecutiveDynamicBidAdFails = 0;
+            _isDynamicLoaded = true;
         } else {
             NeftaMediationAdapter.OnExternalMediationRequestLoaded(NeftaMediationAdapter.AdType.Rewarded, ad, null);
 
             Log("Loaded Default " + ad.getAdUnitId() + ": " + ad.getRevenue());
+            _isDefaultLoaded = true;
         }
 
         UpdateShowButton();
@@ -146,17 +150,19 @@ public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListe
             @Override
             public void onClick(View view) {
                 boolean isShown = false;
-                if (_dynamicRewarded != null) {
+                if (_isDynamicLoaded) {
                     if (_dynamicRewarded.isReady()) {
                         _dynamicRewarded.showAd(_activity);
                         isShown = true;
                     }
+                    _isDynamicLoaded = false;
                     _dynamicRewarded = null;
                 }
-                if (!isShown && _defaultRewarded != null) {
+                if (!isShown && _isDefaultLoaded) {
                     if (_defaultRewarded.isReady()) {
                         _defaultRewarded.showAd(_activity);
                     }
+                    _isDefaultLoaded = false;
                     _defaultRewarded = null;
                 }
 
@@ -205,7 +211,7 @@ public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListe
     }
 
     private void UpdateShowButton() {
-        _showButton.setEnabled(_dynamicRewarded != null && _defaultRewarded.isReady() || _defaultRewarded != null && _defaultRewarded.isReady());
+        _showButton.setEnabled(_isDynamicLoaded || _isDefaultLoaded);
     }
 
     private void Log(String log) {
