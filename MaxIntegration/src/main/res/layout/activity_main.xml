@@ -68,15 +68,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
-                <Button
+                <Switch
                     android:id="@+id/loadInterstitial"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_margin="5dp"
-                    android:background="@drawable/button"
-                    android:foregroundGravity="center"
-                    android:text="Load Interstitial"
-                    android:textColor="#FFFFFF" />
+                    android:text="Load Interstitial" />
 
                 <Button
                     android:id="@+id/showInterstitial"
@@ -122,7 +118,7 @@
                     android:layout_span="2"
                     android:singleLine="false"
                     android:text="Status"
-                    android:textColor="#FFFFFF" />
+                    android:textColor="#000000" />
             </TableRow>
 
         </TableLayout>

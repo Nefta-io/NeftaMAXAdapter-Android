@@ -1,6 +1,8 @@
 package com.nefta.max;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -21,6 +23,7 @@ import com.applovin.sdk.AppLovinPrivacySettings;
 import com.applovin.sdk.AppLovinSdk;
 import com.applovin.sdk.AppLovinSdkConfiguration;
 import com.applovin.sdk.AppLovinSdkInitializationConfiguration;
+import com.nefta.sdk.InitConfiguration;
 import com.nefta.sdk.NeftaPlugin;
 
 import androidx.appcompat.app.AlertDialog;
@@ -28,7 +31,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
 
-    private final String TAG = "NeftaPluginINT";
+    private final String TAG = "NeftaPluginMAX";
     private final static String preferences = "preferences";
     private final static String trackingKey = "tracking";
 
@@ -36,6 +39,12 @@ public class MainActivity extends AppCompatActivity {
     private FrameLayout _bannerPlaceholder;
     private FrameLayout _leaderPlaceholder;
     private TextView _status;
+    private String[] _dynamicAdUnits = new String[] {
+        // interstitials
+        "7267e7f4187b95b2", "00b665eda2658439", "87f1b4837da231e5",
+        // rewarded
+        "72458470d47ee781", "5305c7824f0b5e0a", "a4b93fe91b278c75"
+    };
 
     public ViewGroup GetBannerPlaceholder() {
         return _isTablet ? _leaderPlaceholder : _bannerPlaceholder;
@@ -48,10 +57,14 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate( savedInstanceState );
         setContentView( R.layout.activity_main );
 
+        View view = findViewById(R.id.frameLayout);
+        _bannerPlaceholder = (FrameLayout) view.findViewById(R.id.bannerView);
+        _leaderPlaceholder = (FrameLayout) view.findViewById(R.id.leaderView);
         _status = findViewById(R.id.status);
 
-        PrepareBanner();
+        SetBannerPlaceholder();
 
+        NeftaPlugin.EnableLogging(true);
         Intent intent = getIntent();
         if (intent != null && intent.getExtras() != null) {
             String override = intent.getStringExtra("override");
@@ -60,8 +73,14 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        NeftaPlugin.EnableLogging(true);
+        NeftaPlugin.SetExtraParameter(NeftaPlugin.ExtParam_TestGroup, "split-max");
         NeftaPlugin.Init(getApplicationContext(), "5643649824063488");
+        //NeftaPlugin._instance.OnReady = (InitConfiguration initConfig) -> {
+        //    String[] dynamicAdUnits = initConfig.GetMediationProviderAdUnits();
+        //    if (dynamicAdUnits != null) {
+        //        _dynamicAdUnits = dynamicAdUnits;
+        //    }
+        //};
 
         SetTracking();
     }
@@ -71,6 +90,7 @@ public class MainActivity extends AppCompatActivity {
         if (sharedPreferences.contains(trackingKey)) {
             boolean isTrackingAllowed = sharedPreferences.getBoolean(trackingKey, false);
             AppLovinPrivacySettings.setHasUserConsent(isTrackingAllowed, this);
+
             InitMax();
         } else {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -99,15 +119,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void InitMax() {
-        String[] adUnits = new String[]{
-            // interstitials
-            "7267e7f4187b95b2", "00b665eda2658439", "87f1b4837da231e5",
-            // rewarded
-            "72458470d47ee781", "5305c7824f0b5e0a", "a4b93fe91b278c75"
-        };
-
         AppLovinSdk sdk = AppLovinSdk.getInstance(this);
-        sdk.getSettings().setExtraParameter("disable_b2b_ad_unit_ids", String.join(",", adUnits));
+        sdk.getSettings().setExtraParameter("disable_b2b_ad_unit_ids", String.join(",", _dynamicAdUnits));
         AppLovinSdkInitializationConfiguration initConfig = AppLovinSdkInitializationConfiguration.builder( "IAhBswbDpMg9GhQ8NEKffzNrXQP1H4ABNFvUA7ePIz2xmarVFcy_VB8UfGnC9IPMOgpQ3p8G5hBMebJiTHv3P9" )
                 .setMediationProvider( AppLovinMediationProvider.MAX )
                 .build();
@@ -127,10 +140,12 @@ public class MainActivity extends AppCompatActivity {
         _bannerWrapper.SetAutoRefresh(!displayed);
     }
 
-    private void PrepareBanner() {
-        View view = findViewById(R.id.frameLayout);
-        _bannerPlaceholder = (FrameLayout) view.findViewById(R.id.bannerView);
-        _leaderPlaceholder = (FrameLayout) view.findViewById(R.id.leaderView);
+    void Log(String log) {
+        _status.setText(log);
+        Log.i(TAG, log);
+    }
+
+    private void SetBannerPlaceholder() {
         WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         DisplayMetrics displayMetrics = new DisplayMetrics();
         Display display = windowManager.getDefaultDisplay();
@@ -141,10 +156,5 @@ public class MainActivity extends AppCompatActivity {
         _isTablet = diagonalInInches >= 6.5 && (getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >= Configuration.SCREENLAYOUT_SIZE_LARGE;
         _bannerPlaceholder.setVisibility(_isTablet ? View.GONE : View.VISIBLE);
         _leaderPlaceholder.setVisibility(_isTablet ? View.VISIBLE : View.GONE);
-    }
-
-    void Log(String log) {
-        _status.setText(log);
-        Log.i(TAG, log);
     }
 }

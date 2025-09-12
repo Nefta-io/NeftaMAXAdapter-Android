@@ -4,6 +4,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.Switch;
 
 import androidx.annotation.NonNull;
 
@@ -20,61 +22,114 @@ import com.nefta.sdk.AdInsight;
 import com.nefta.sdk.Insights;
 import com.nefta.sdk.NeftaPlugin;
 
+import java.util.Locale;
+
 class InterstitialWrapper implements MaxAdListener, MaxAdRevenueListener, MaxAdRequestListener, MaxAdReviewListener, MaxAdExpirationListener {
+    private final String DynamicAdUnitId = "87f1b4837da231e5";
     private final String DefaultAdUnitId = "7267e7f4187b95b2";
     private final int TimeoutInSeconds = 5;
 
-    private MaxInterstitialAd _interstitial;
-    private AdInsight _usedInsight;
-    private int _consecutiveAdFails;
+    private MaxInterstitialAd _dynamicInterstitial;
+    private double _dynamicAdRevenue = -1;
+    private AdInsight _dynamicInsight;
+    private int _consecutiveDynamicAdFails;
+    private MaxInterstitialAd _defaultInterstitial;
+    private double _defaultAdRevenue = -1;
 
     private MainActivity _activity;
-    private Button _loadButton;
+    private Switch _loadSwitch;
     private Button _showButton;
     private Handler _handler;
 
-    private void GetInsightsAndLoad() {
-        NeftaPlugin._instance.GetInsights(Insights.INTERSTITIAL, this::Load, TimeoutInSeconds);
+    private void StartLoading() {
+        if (_dynamicInterstitial == null) {
+            GetInsightsAndLoad(null);
+        }
+        if (_defaultInterstitial == null) {
+            LoadDefault();
+        }
     }
 
-    private void Load(Insights insights) {
-        String selectedAdUnitId = DefaultAdUnitId;
-        _usedInsight = insights._interstitial;
-        if (_usedInsight != null && _usedInsight._adUnit != null) {
-            selectedAdUnitId = _usedInsight._adUnit;
-        }
+    private void GetInsightsAndLoad(AdInsight previousInsight) {
+        NeftaPlugin._instance.GetInsights(Insights.INTERSTITIAL, previousInsight, this::LoadWithInsights, TimeoutInSeconds);
+    }
 
-        Log("Loading "+ selectedAdUnitId +" insights: "+ _usedInsight);
-        _interstitial = new MaxInterstitialAd(selectedAdUnitId);
-        _interstitial.setListener(InterstitialWrapper.this);
-        _interstitial.setRevenueListener(InterstitialWrapper.this);
-        _interstitial.setExpirationListener(InterstitialWrapper.this);
-        _interstitial.setExtraParameter("disable_auto_retries", "true");
-        _interstitial.loadAd();
+    private void LoadWithInsights(Insights insights) {
+        _dynamicInsight = insights._interstitial;
+        if (_dynamicInsight != null) {
+            String bidFloorParam = String.format(Locale.ROOT, "%.10f", _dynamicInsight._floorPrice);
+
+            Log("Loading Dynamic Interstitial with insight: " + _dynamicInsight + " floor: " + bidFloorParam);
+            _dynamicInterstitial = new MaxInterstitialAd(DynamicAdUnitId);
+            _dynamicInterstitial.setListener(InterstitialWrapper.this);
+            _dynamicInterstitial.setRevenueListener(InterstitialWrapper.this);
+            _dynamicInterstitial.setExpirationListener(InterstitialWrapper.this);
+            _dynamicInterstitial.setExtraParameter("disable_auto_retries", "true");
+            _dynamicInterstitial.setExtraParameter("jC7Fp", bidFloorParam);
+            _dynamicInterstitial.loadAd();
+
+            NeftaMediationAdapter.OnExternalMediationRequest(_dynamicInterstitial, _dynamicInsight);
+        }
+    }
+
+    private void LoadDefault() {
+        Log("Loading Default");
+        _defaultInterstitial = new MaxInterstitialAd(DefaultAdUnitId);
+        _defaultInterstitial.setListener(InterstitialWrapper.this);
+        _defaultInterstitial.setRevenueListener(InterstitialWrapper.this);
+        _defaultInterstitial.loadAd();
+
+        NeftaMediationAdapter.OnExternalMediationRequest(_defaultInterstitial);
     }
 
     @Override
     public void onAdLoadFailed(@NonNull String adUnitId, @NonNull MaxError maxError) {
-        NeftaMediationAdapter.OnExternalMediationRequestFailed(NeftaMediationAdapter.AdType.Interstitial, adUnitId, _usedInsight, maxError);
+        if (DynamicAdUnitId.equals(adUnitId)) {
+            NeftaMediationAdapter.OnExternalMediationRequestFailed(_dynamicInterstitial, maxError);
 
-        Log("onAdLoadFailed "+ adUnitId + ": "+ maxError.getMessage());
+            Log("Load failed Dynamic " + adUnitId + ": " + maxError.getMessage());
 
-        _consecutiveAdFails++;
-        // As per MAX recommendations, retry with exponentially higher delays up to 64s
-        // In case you would like to customize fill rate / revenue please contact our customer support
-        int delayInSeconds = new int[] { 0, 2, 4, 8, 16, 32, 64 } [Math.min(_consecutiveAdFails, 6)];
+            _dynamicInterstitial = null;
+            _consecutiveDynamicAdFails++;
+            // As per MAX recommendations, retry with exponentially higher delays up to 64s
+            // In case you would like to customize fill rate / revenue please contact our customer support
+            int delayInSeconds = new int[]{0, 2, 4, 8, 16, 32, 64}[Math.min(_consecutiveDynamicAdFails, 6)];
 
-        _handler.postDelayed(this::GetInsightsAndLoad, delayInSeconds * 1000L);
+            _handler.postDelayed(() -> {
+                if (_loadSwitch.isChecked()) {
+                    GetInsightsAndLoad(_dynamicInsight);
+                }
+            }, delayInSeconds * 1000L);
+        } else {
+            NeftaMediationAdapter.OnExternalMediationRequestFailed(_defaultInterstitial, maxError);
+
+            Log("Load failed Default "+ adUnitId + ": "+ maxError.getMessage());
+
+            _defaultInterstitial = null;
+            if (_loadSwitch.isChecked()) {
+                LoadDefault();
+            }
+        }
     }
 
     @Override
     public void onAdLoaded(@NonNull MaxAd ad) {
-        NeftaMediationAdapter.OnExternalMediationRequestLoaded(NeftaMediationAdapter.AdType.Interstitial, ad, _usedInsight);
+        if (DynamicAdUnitId.equals(ad.getAdUnitId())) {
+            NeftaMediationAdapter.OnExternalMediationRequestLoaded(_dynamicInterstitial, ad);
 
-        Log("onAdLoaded "+ ad.getAdUnitId() +": "+ ad.getRevenue());
+            _consecutiveDynamicAdFails = 0;
+            _dynamicAdRevenue = ad.getRevenue();
 
-        _consecutiveAdFails = 0;
-        _showButton.setEnabled(true);
+            Log("Loaded Dynamic "+ ad.getAdUnitId() +": "+ ad.getRevenue());
+        } else {
+            NeftaMediationAdapter.OnExternalMediationRequestLoaded(_defaultInterstitial, ad);
+
+            _defaultAdRevenue = ad.getRevenue();
+
+            Log("Loaded Default " + ad.getAdUnitId() + ": " + ad.getRevenue());
+        }
+
+        UpdateShowButton();
     }
 
     @Override
@@ -84,31 +139,69 @@ class InterstitialWrapper implements MaxAdListener, MaxAdRevenueListener, MaxAdR
         Log("onAdRevenuePaid "+ ad.getAdUnitId() + ": " + ad.getRevenue());
     }
 
-    public InterstitialWrapper(MainActivity activity, Button loadButton, Button showButton) {
+    @Override
+    public void onAdClicked(@NonNull MaxAd ad) {
+        NeftaMediationAdapter.OnExternalMediationClick(ad);
+
+        Log("onAdClicked "+ ad.getAdUnitId());
+    }
+
+    public InterstitialWrapper(MainActivity activity, Switch loadSwitch, Button showButton) {
         _activity = activity;
-        _loadButton = loadButton;
+        _loadSwitch = loadSwitch;
         _showButton = showButton;
 
         _handler = new Handler(Looper.getMainLooper());
 
-        _loadButton.setOnClickListener(new View.OnClickListener() {
+        _loadSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
-            public void onClick(View v) {
-                Log("GetInsightsAndLoad...");
-                GetInsightsAndLoad();
-                _loadButton.setEnabled(false);
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    StartLoading();
+                }
             }
         });
         _showButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                _interstitial.showAd(_activity);
-
-                _showButton.setEnabled(false);
+            public void onClick(View view) {
+                boolean isShown = false;
+                if (_dynamicAdRevenue >= 0) {
+                    if (_defaultAdRevenue > _dynamicAdRevenue) {
+                        isShown = TryShowDefault();
+                    }
+                    if (!isShown) {
+                        isShown = TryShowDynamic();
+                    }
+                }
+                    if (!isShown && _defaultAdRevenue >= 0) {
+                    TryShowDefault();
+                }
+                UpdateShowButton();
             }
         });
 
         _showButton.setEnabled(false);
+    }
+
+    private boolean TryShowDynamic() {
+        boolean shown = false;
+        if (_dynamicInterstitial.isReady()) {
+            _dynamicInterstitial.showAd(_activity);
+            shown = true;
+        }
+        _dynamicAdRevenue = -1;
+        _dynamicInterstitial = null;
+        return shown;
+    }
+
+    private boolean TryShowDefault() {
+        boolean shown = false;
+        if (_defaultInterstitial.isReady()) {
+            _defaultInterstitial.showAd(_activity);
+            shown = true;
+        }
+        _defaultAdRevenue = -1;
+        _defaultInterstitial = null;
+        return shown;
     }
 
     @Override
@@ -121,12 +214,11 @@ class InterstitialWrapper implements MaxAdListener, MaxAdRevenueListener, MaxAdR
     public void onAdHidden(@NonNull MaxAd ad) {
         Log("onAdHidden "+ ad.getAdUnitId());
         _activity.OnFullScreenAdDisplay(false);
-        _loadButton.setEnabled(true);
-    }
 
-    @Override
-    public void onAdClicked(@NonNull MaxAd ad) {
-        Log("onAdClicked "+ ad.getAdUnitId());
+        // start new cycle
+        if (_loadSwitch.isChecked()) {
+            StartLoading();
+        }
     }
 
     @Override
@@ -147,6 +239,10 @@ class InterstitialWrapper implements MaxAdListener, MaxAdRevenueListener, MaxAdR
     @Override
     public void onExpiredAdReloaded(@NonNull MaxAd var1, @NonNull MaxAd var2) {
         Log("onExpiredAdReloaded "+ var1 + ": "+ var2);
+    }
+
+    private void UpdateShowButton() {
+        _showButton.setEnabled(_dynamicAdRevenue >= 0 || _defaultAdRevenue >= 0);
     }
 
     void Log(String log) {

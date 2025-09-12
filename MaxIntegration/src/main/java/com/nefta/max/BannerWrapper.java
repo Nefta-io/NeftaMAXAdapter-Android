@@ -32,7 +32,7 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
     private MainActivity _activity;
 
     private void GetInsightsAndLoad() {
-        NeftaPlugin._instance.GetInsights(Insights.BANNER, this::OnInsights, TimeoutInSeconds);
+        NeftaPlugin._instance.GetInsights(Insights.BANNER, _usedInsight, this::OnInsights, TimeoutInSeconds);
     }
 
     private void OnInsights(Insights insights) {
@@ -49,11 +49,12 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
         _adView.setExtraParameter("disable_auto_retries", "true");
         _activity.GetBannerPlaceholder().addView(_adView.getRootView());
         _adView.loadAd();
+        NeftaMediationAdapter.OnExternalMediationRequest(_adView, _usedInsight);
     }
 
     @Override
     public void onAdLoadFailed(@NonNull final String adUnitId, @NonNull final MaxError maxError) {
-        NeftaMediationAdapter.OnExternalMediationRequestFailed(NeftaMediationAdapter.AdType.Banner, adUnitId, _usedInsight, maxError);
+        NeftaMediationAdapter.OnExternalMediationRequestFailed(_adView, maxError);
 
         Log("onAdLoadFailed "+ adUnitId);
 
@@ -67,13 +68,27 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
 
     @Override
     public void onAdLoaded(final MaxAd ad) {
-        NeftaMediationAdapter.OnExternalMediationRequestLoaded(NeftaMediationAdapter.AdType.Banner, ad, _usedInsight);
+        NeftaMediationAdapter.OnExternalMediationRequestLoaded(_adView, ad);
 
         Log("onAdLoaded "+ ad);
 
         _consecutiveAdFails = 0;
 
         _closeButton.setEnabled(true);
+    }
+
+    @Override
+    public void onAdRevenuePaid(final MaxAd ad) {
+        NeftaMediationAdapter.OnExternalMediationImpression(ad);
+
+        Log("onAdRevenuePaid "+ ad.getAdUnitId() + ": " + ad.getRevenue());
+    }
+
+    @Override
+    public void onAdClicked(@NonNull final MaxAd ad) {
+        NeftaMediationAdapter.OnExternalMediationClick(ad);
+
+        Log("onAdClicked "+ ad.getAdUnitId());
     }
 
     public BannerWrapper(MainActivity activity, Button loadAndShowButton, Button closeButton) {
@@ -129,11 +144,6 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
     }
 
     @Override
-    public void onAdClicked(@NonNull final MaxAd ad) {
-        Log("onAdClicked "+ ad.getAdUnitId());
-    }
-
-    @Override
     public void onAdExpanded(@NonNull final MaxAd ad) {
         Log("onAdExpanded "+ ad.getAdUnitId());
     }
@@ -154,13 +164,6 @@ class BannerWrapper implements MaxAdViewAdListener, MaxAdRevenueListener {
     @Override
     public void onAdCollapsed(@NonNull final MaxAd ad) {
         Log("onAdCollapsed "+ ad.getAdUnitId());
-    }
-
-    @Override
-    public void onAdRevenuePaid(final MaxAd ad) {
-        NeftaMediationAdapter.OnExternalMediationImpression(ad);
-
-        Log("onAdRevenuePaid "+ ad.getAdUnitId() + ": " + ad.getRevenue());
     }
 
     void Log(String log) {
