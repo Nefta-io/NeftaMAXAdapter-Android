@@ -43,31 +43,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
-                <Button
-                    android:id="@+id/showBanner"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="5dp"
-                    android:background="@drawable/button"
-                    android:gravity="center"
-                    android:text="Show Banner"
-                    android:textColor="@color/button_enabled_text" />
-
-                <Button
-                    android:id="@+id/closeBanner"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="5dp"
-                    android:background="@drawable/button"
-                    android:foregroundGravity="center"
-                    android:text="Close Banner"
-                    android:textColor="#FFFFFF" />
-            </TableRow>
-
-            <TableRow
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
-
                 <Switch
                     android:id="@+id/loadInterstitial"
                     android:layout_width="wrap_content"
@@ -83,6 +58,20 @@
                     android:foregroundGravity="center"
                     android:text="Show Interstitial"
                     android:textColor="#FFFFFF" />
+            </TableRow>
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <TextView
+                    android:id="@+id/interstitialStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_span="2"
+                    android:singleLine="false"
+                    android:text="Status"
+                    android:textColor="#000000" />
             </TableRow>
 
             <TableRow
@@ -112,7 +101,7 @@
                 android:layout_height="match_parent">
 
                 <TextView
-                    android:id="@+id/status"
+                    android:id="@+id/rewardedStatus"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_span="2"

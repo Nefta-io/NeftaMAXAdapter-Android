@@ -2,10 +2,12 @@ package com.nefta.max;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.Switch;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
@@ -38,6 +40,7 @@ public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListe
     private MainActivity _activity;
     private Switch _loadSwitch;
     private Button _showButton;
+    private TextView _status;
     private Handler _handler;
 
     private void StartLoading() {
@@ -143,10 +146,11 @@ public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListe
         Log( "onAdClicked "+ ad.getAdUnitId());
     }
 
-    public RewardedWrapper(MainActivity activity, Switch loadSwitch, Button showButton) {
+    public RewardedWrapper(MainActivity activity, Switch loadSwitch, Button showButton, TextView status) {
         _activity = activity;
         _loadSwitch = loadSwitch;
         _showButton = showButton;
+        _status = status;
 
         _handler = new Handler(Looper.getMainLooper());
 
@@ -209,13 +213,11 @@ public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListe
     @Override
     public void onAdDisplayed(@NonNull MaxAd ad) {
         Log("onAdDisplayed "+ ad.getAdUnitId());
-        _activity.OnFullScreenAdDisplay(true);
     }
 
     @Override
     public void onAdHidden(@NonNull MaxAd ad) {
         Log("onAdHidden "+ ad.getAdUnitId());
-        _activity.OnFullScreenAdDisplay(false);
 
         // start new cycle
         if (_loadSwitch.isChecked()) {
@@ -238,6 +240,7 @@ public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListe
     }
 
     void Log(String log) {
-        _activity.Log("Rewarded " + log);
+        _status.setText(log);
+        Log.i("NeftaPluginMAX", "Rewarded " + log);
     }
 }

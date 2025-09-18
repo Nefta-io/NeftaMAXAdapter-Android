@@ -1,8 +1,6 @@
 package com.nefta.max;
 
 import android.content.Context;
-import android.os.Handler;
-import android.os.Looper;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -23,7 +21,6 @@ import com.applovin.sdk.AppLovinPrivacySettings;
 import com.applovin.sdk.AppLovinSdk;
 import com.applovin.sdk.AppLovinSdkConfiguration;
 import com.applovin.sdk.AppLovinSdkInitializationConfiguration;
-import com.nefta.sdk.InitConfiguration;
 import com.nefta.sdk.NeftaPlugin;
 
 import androidx.appcompat.app.AlertDialog;
@@ -31,38 +28,20 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
 
-    private final String TAG = "NeftaPluginMAX";
     private final static String preferences = "preferences";
     private final static String trackingKey = "tracking";
 
-    private static boolean _isTablet;
-    private FrameLayout _bannerPlaceholder;
-    private FrameLayout _leaderPlaceholder;
-    private TextView _status;
     private String[] _dynamicAdUnits = new String[] {
-        // interstitials
-        "7267e7f4187b95b2", "00b665eda2658439", "87f1b4837da231e5",
+        // interstitial
+        "87f1b4837da231e5",
         // rewarded
-        "72458470d47ee781", "5305c7824f0b5e0a", "a4b93fe91b278c75"
+        "a4b93fe91b278c75"
     };
-
-    public ViewGroup GetBannerPlaceholder() {
-        return _isTablet ? _leaderPlaceholder : _bannerPlaceholder;
-    }
-
-    private BannerWrapper _bannerWrapper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate( savedInstanceState );
         setContentView( R.layout.activity_main );
-
-        View view = findViewById(R.id.frameLayout);
-        _bannerPlaceholder = (FrameLayout) view.findViewById(R.id.bannerView);
-        _leaderPlaceholder = (FrameLayout) view.findViewById(R.id.leaderView);
-        _status = findViewById(R.id.status);
-
-        SetBannerPlaceholder();
 
         NeftaPlugin.EnableLogging(true);
         Intent intent = getIntent();
@@ -75,12 +54,6 @@ public class MainActivity extends AppCompatActivity {
 
         NeftaPlugin.SetExtraParameter(NeftaPlugin.ExtParam_TestGroup, "split-max");
         NeftaPlugin.Init(getApplicationContext(), "5643649824063488");
-        //NeftaPlugin._instance.OnReady = (InitConfiguration initConfig) -> {
-        //    String[] dynamicAdUnits = initConfig.GetMediationProviderAdUnits();
-        //    if (dynamicAdUnits != null) {
-        //        _dynamicAdUnits = dynamicAdUnits;
-        //    }
-        //};
 
         SetTracking();
     }
@@ -120,6 +93,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void InitMax() {
         AppLovinSdk sdk = AppLovinSdk.getInstance(this);
+        sdk.getSettings().setVerboseLogging(true);
         sdk.getSettings().setExtraParameter("disable_b2b_ad_unit_ids", String.join(",", _dynamicAdUnits));
         AppLovinSdkInitializationConfiguration initConfig = AppLovinSdkInitializationConfiguration.builder( "IAhBswbDpMg9GhQ8NEKffzNrXQP1H4ABNFvUA7ePIz2xmarVFcy_VB8UfGnC9IPMOgpQ3p8G5hBMebJiTHv3P9" )
                 .setMediationProvider( AppLovinMediationProvider.MAX )
@@ -127,34 +101,10 @@ public class MainActivity extends AppCompatActivity {
         sdk.initialize( initConfig, new AppLovinSdk.SdkInitializationListener() {
             @Override
             public void onSdkInitialized(final AppLovinSdkConfiguration sdkConfig) {
-                AppLovinSdk.getInstance(MainActivity.this).getSettings().setVerboseLogging(true);
             }
         });
 
-        _bannerWrapper = new BannerWrapper(this, findViewById(R.id.showBanner), findViewById(R.id.closeBanner));
-        new InterstitialWrapper(this, findViewById(R.id.loadInterstitial), findViewById(R.id.showInterstitial));
-        new RewardedWrapper(this, findViewById(R.id.loadRewarded), findViewById(R.id.showRewarded));
-    }
-
-    void OnFullScreenAdDisplay(boolean displayed) {
-        _bannerWrapper.SetAutoRefresh(!displayed);
-    }
-
-    void Log(String log) {
-        _status.setText(log);
-        Log.i(TAG, log);
-    }
-
-    private void SetBannerPlaceholder() {
-        WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        Display display = windowManager.getDefaultDisplay();
-        display.getMetrics(displayMetrics);
-        Point point = new Point();
-        display.getRealSize(point);
-        double diagonalInInches = Math.sqrt(Math.pow((double)point.x / displayMetrics.xdpi, 2) + Math.pow((double)point.y / displayMetrics.ydpi, 2));
-        _isTablet = diagonalInInches >= 6.5 && (getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >= Configuration.SCREENLAYOUT_SIZE_LARGE;
-        _bannerPlaceholder.setVisibility(_isTablet ? View.GONE : View.VISIBLE);
-        _leaderPlaceholder.setVisibility(_isTablet ? View.VISIBLE : View.GONE);
+        new InterstitialWrapper(this, findViewById(R.id.loadInterstitial), findViewById(R.id.showInterstitial), findViewById(R.id.interstitialStatus));
+        new RewardedWrapper(this, findViewById(R.id.loadRewarded), findViewById(R.id.showRewarded), findViewById(R.id.rewardedStatus));
     }
 }
