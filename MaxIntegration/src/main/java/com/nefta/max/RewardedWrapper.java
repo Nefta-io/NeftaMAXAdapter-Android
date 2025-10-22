@@ -31,10 +31,13 @@ public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListe
     private final int TimeoutInSeconds = 5;
 
     private MaxRewardedAd _dynamicRewarded;
-    private double _dynamicAdRevenue = -1;
     private AdInsight _dynamicInsight;
     private int _consecutiveDynamicAdFails;
+    private double _dynamicAdRevenue = -1;
+
     private MaxRewardedAd _defaultRewarded;
+    private long _defaultLoadStart = 0;
+    private int _consecutiveDefaultAdFails;
     private double _defaultAdRevenue = -1;
 
     private MainActivity _activity;
@@ -58,6 +61,7 @@ public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListe
 
     private void LoadWithInsights(Insights insights) {
         _dynamicInsight = insights._rewarded;
+        Log("LoadWithInsights: " + _dynamicInsight);
         if (_dynamicInsight != null) {
             String bidFloorParam = String.format(Locale.ROOT, "%.10f", _dynamicInsight._floorPrice);
 
@@ -67,20 +71,23 @@ public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListe
             _dynamicRewarded.setRevenueListener(RewardedWrapper.this);
             _dynamicRewarded.setExtraParameter("disable_auto_retries", "true");
             _dynamicRewarded.setExtraParameter("jC7Fp", bidFloorParam);
-            _dynamicRewarded.loadAd();
 
             NeftaMediationAdapter.OnExternalMediationRequest(_dynamicRewarded, _dynamicInsight);
+
+            _dynamicRewarded.loadAd();
         }
     }
 
     private void LoadDefault() {
         Log("Loading Default");
+        _defaultLoadStart = System.currentTimeMillis();
         _defaultRewarded = MaxRewardedAd.getInstance(DefaultAdUnitId);
         _defaultRewarded.setListener(RewardedWrapper.this);
         _defaultRewarded.setRevenueListener(RewardedWrapper.this);
-        _defaultRewarded.loadAd();
 
         NeftaMediationAdapter.OnExternalMediationRequest(_defaultRewarded);
+
+        _defaultRewarded.loadAd();
     }
 
     @Override
@@ -92,24 +99,40 @@ public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListe
 
             _dynamicRewarded = null;
             _consecutiveDynamicAdFails++;
-            // As per MAX recommendations, retry with exponentially higher delays up to 64s
-            // In case you would like to customize fill rate / revenue please contact our customer support
-            int delayInSeconds = new int[]{0, 2, 4, 8, 16, 32, 64}[Math.min(_consecutiveDynamicAdFails, 6)];
+
+            long waitTimeInMs = GetMinWaitTime(_consecutiveDynamicAdFails);
             _handler.postDelayed(() -> {
                 if (_loadSwitch.isChecked()) {
                     GetInsightsAndLoad(_dynamicInsight);
                 }
-            }, delayInSeconds * 1000L);
+            }, waitTimeInMs);
         } else {
             NeftaMediationAdapter.OnExternalMediationRequestFailed(_defaultRewarded, maxError);
 
             Log("Load failed Default "+ adUnitId + ": "+ maxError.getMessage());
 
             _defaultRewarded = null;
+            _consecutiveDefaultAdFails++;
+
             if (_loadSwitch.isChecked()) {
-                LoadDefault();
+                // In rare cases where mediation returns failed load early (OnAdFailedEvent is invoked in ms after load):
+                // Make sure to wait at least 2 seconds since LoadDefault()
+                // (This is different from delay on dynamic track, where the delay starts from OnAdFailedEvent())
+                long timeSinceAdLoad = System.currentTimeMillis() - _defaultLoadStart;
+                long remainingTimeInMs = GetMinWaitTime(_consecutiveDefaultAdFails) - timeSinceAdLoad;
+                if (remainingTimeInMs > 0) {
+                    _handler.postDelayed(this::LoadDefault, remainingTimeInMs);
+                } else {
+                    LoadDefault();
+                }
             }
         }
+    }
+
+    private long GetMinWaitTime(int numberOfConsecutiveFails) {
+        // As per MAX recommendations, retry with exponentially higher delays up to 64s
+        // In case you would like to customize fill rate / revenue please contact our customer support
+        return new int[]{0, 2, 4, 8, 16, 32, 64}[Math.min(numberOfConsecutiveFails, 6)] * 1000L;
     }
 
     @Override
@@ -124,6 +147,7 @@ public class RewardedWrapper implements MaxRewardedAdListener, MaxAdRevenueListe
         } else {
             NeftaMediationAdapter.OnExternalMediationRequestLoaded(_defaultRewarded, ad);
 
+            _consecutiveDefaultAdFails = 0;
             _defaultAdRevenue = ad.getRevenue();
 
             Log("Loaded Default " + ad.getAdUnitId() + ": " + ad.getRevenue());
