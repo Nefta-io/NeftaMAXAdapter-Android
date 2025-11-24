@@ -23,9 +23,11 @@ public class MainActivity extends AppCompatActivity {
 
     private String[] _dynamicAdUnits = new String[] {
         // interstitial
-        "87f1b4837da231e5",
+        "87f1b4837da231e5", // track A
+        "7267e7f4187b95b2", // track B
         // rewarded
-        "a4b93fe91b278c75"
+        "a4b93fe91b278c75", // track A
+        "72458470d47ee781"  // track B
     };
 
     @Override
