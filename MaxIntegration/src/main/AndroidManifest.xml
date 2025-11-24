@@ -16,7 +16,7 @@
 
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-1193175835908241~7144783846"/>
+            android:value="ca-app-pub-1193175835908241~8925751255" />
 
         <activity
             android:name="com.nefta.max.MainActivity"

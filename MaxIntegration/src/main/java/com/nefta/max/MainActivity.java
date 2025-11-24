@@ -2,19 +2,9 @@ package com.nefta.max;
 
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Configuration;
-import android.graphics.Point;
 import android.os.Bundle;
-import android.util.DisplayMetrics;
-import android.util.Log;
-import android.view.Display;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.WindowManager;
-import android.widget.FrameLayout;
-import android.widget.TextView;
 
 import com.applovin.sdk.AppLovinMediationProvider;
 import com.applovin.sdk.AppLovinPrivacySettings;
@@ -43,15 +33,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate( savedInstanceState );
         setContentView( R.layout.activity_main );
 
-        NeftaPlugin.EnableLogging(true);
-        Intent intent = getIntent();
-        if (intent != null && intent.getExtras() != null) {
-            String override = intent.getStringExtra("override");
-            if (override != null && override.length() > 2) {
-                NeftaPlugin.SetOverride(override);
-            }
-        }
+        DebugServer.Init(this, getIntent());
 
+        NeftaPlugin.EnableLogging(true);
         NeftaPlugin.SetExtraParameter(NeftaPlugin.ExtParam_TestGroup, "split-max");
         NeftaPlugin.Init(getApplicationContext(), "5643649824063488");
 
@@ -95,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
         AppLovinSdk sdk = AppLovinSdk.getInstance(this);
         sdk.getSettings().setVerboseLogging(true);
         sdk.getSettings().setExtraParameter("disable_b2b_ad_unit_ids", String.join(",", _dynamicAdUnits));
-        AppLovinSdkInitializationConfiguration initConfig = AppLovinSdkInitializationConfiguration.builder( "IAhBswbDpMg9GhQ8NEKffzNrXQP1H4ABNFvUA7ePIz2xmarVFcy_VB8UfGnC9IPMOgpQ3p8G5hBMebJiTHv3P9" )
+        AppLovinSdkInitializationConfiguration initConfig = AppLovinSdkInitializationConfiguration.builder(BuildConfig.MAX_KEY)
                 .setMediationProvider( AppLovinMediationProvider.MAX )
                 .build();
         sdk.initialize( initConfig, new AppLovinSdk.SdkInitializationListener() {
@@ -103,8 +87,5 @@ public class MainActivity extends AppCompatActivity {
             public void onSdkInitialized(final AppLovinSdkConfiguration sdkConfig) {
             }
         });
-
-        new InterstitialWrapper(this, findViewById(R.id.loadInterstitial), findViewById(R.id.showInterstitial), findViewById(R.id.interstitialStatus));
-        new RewardedWrapper(this, findViewById(R.id.loadRewarded), findViewById(R.id.showRewarded), findViewById(R.id.rewardedStatus));
     }
 }
