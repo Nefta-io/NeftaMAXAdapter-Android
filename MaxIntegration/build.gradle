@@ -11,6 +11,7 @@ android {
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
+
         android.buildFeatures.buildConfig true
         def localProperties = new Properties()
         def localPropertiesFile = rootProject.file('local.properties')

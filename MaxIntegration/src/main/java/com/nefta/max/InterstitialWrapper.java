@@ -83,11 +83,8 @@ public class InterstitialWrapper extends TableLayout {
             // In case you would like to customize fill rate / revenue please contact our customer support
             long waitTimeInMs = new int[]{0, 2, 4, 8, 16, 32, 64}[Math.min(_consecutiveAdFails, 6)] * 1000L;
             _handler.postDelayed(() -> {
-                if (_loadSwitch.isChecked()) {
-                    if (_loadSwitch.isChecked()) {
-                        StartLoading();
-                    }
-                }
+                _state = State.Idle;
+                RetryLoading();
             }, waitTimeInMs);
         }
 
@@ -114,10 +111,7 @@ public class InterstitialWrapper extends TableLayout {
         public void onAdHidden(@NonNull MaxAd ad) {
             Log("onAdHidden "+ ad.getAdUnitId());
 
-            // start new cycle
-            if (_loadSwitch.isChecked()) {
-                StartLoading();
-            }
+            RetryLoading();
         }
 
         @Override
@@ -171,7 +165,8 @@ public class InterstitialWrapper extends TableLayout {
                 Log("Loading "+ request._adUnitId + " as Optimized with floor: " + bidFloor);
                 request._interstitial.loadAd();
             } else {
-                request._consecutiveAdFails ++;
+                request._consecutiveAdFails++;
+                _isFirstResponseReceived = true;
                 request.RetryLoad();
             }
         }, TimeoutInSeconds);
@@ -250,10 +245,14 @@ public class InterstitialWrapper extends TableLayout {
             request._interstitial.showAd(_activity);
             return true;
         }
+        RetryLoading();
+        return false;
+    }
+
+    public void RetryLoading() {
         if (_loadSwitch.isChecked()) {
             StartLoading();
         }
-        return false;
     }
 
     public void OnTrackLoad(boolean success) {
@@ -262,9 +261,7 @@ public class InterstitialWrapper extends TableLayout {
         }
 
         _isFirstResponseReceived = true;
-        if (_loadSwitch.isChecked()) {
-            StartLoading();;
-        }
+        RetryLoading();
     }
 
     private void UpdateShowButton() {

@@ -91,11 +91,7 @@ public class RewardedSim extends TableLayout {
             long waitTimeInMs = new int[]{0, 2, 4, 8, 16, 32, 64}[Math.min(_consecutiveAdFails, 6)] * 1000L;
             _handler.postDelayed(() -> {
                 _state = State.Idle;
-                if (_loadSwitch.isChecked()) {
-                    if (_loadSwitch.isChecked()) {
-                        StartLoading();
-                    }
-                }
+                RetryLoading();
             }, waitTimeInMs);
         }
 
@@ -127,10 +123,7 @@ public class RewardedSim extends TableLayout {
         public void onAdHidden(@NonNull MaxAd ad) {
             Log("onAdHidden "+ ad.getAdUnitId());
 
-            // start new cycle
-            if (_loadSwitch.isChecked()) {
-                StartLoading();
-            }
+            RetryLoading();
         }
 
         @Override
@@ -196,7 +189,8 @@ public class RewardedSim extends TableLayout {
                 Log("Loading "+ request._adUnitId + " as Optimized with floor: " + bidFloor);
                 request._rewarded.loadAd();
             } else {
-                request._consecutiveAdFails ++;
+                request._consecutiveAdFails++;
+                _isFirstResponseReceived = true;
                 request.RetryLoad();
             }
         }, TimeoutInSeconds);
@@ -297,10 +291,14 @@ public class RewardedSim extends TableLayout {
             request._rewarded.showAd(_activity);
             return true;
         }
+        RetryLoading();
+        return false;
+    }
+
+    public void RetryLoading() {
         if (_loadSwitch.isChecked()) {
             StartLoading();
         }
-        return false;
     }
 
     public void OnTrackLoad(boolean success) {
@@ -309,9 +307,7 @@ public class RewardedSim extends TableLayout {
         }
 
         _isFirstResponseReceived = true;
-        if (_loadSwitch.isChecked()) {
-            StartLoading();;
-        }
+        RetryLoading();
     }
 
     private void UpdateShowButton() {
