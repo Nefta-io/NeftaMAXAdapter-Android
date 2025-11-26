@@ -58,6 +58,10 @@ public class InterstitialWrapper extends TableLayout {
             Log("Load failed " + adUnitId + ": " + maxError.getMessage());
 
             _interstitial = null;
+            OnLoadFail();
+        }
+
+        public void OnLoadFail() {
             _consecutiveAdFails++;
             RetryLoad();
 
@@ -117,6 +121,8 @@ public class InterstitialWrapper extends TableLayout {
         @Override
         public void onAdDisplayFailed(@NonNull MaxAd ad, @NonNull MaxError maxError) {
             Log("onAdDisplayFailed "+ ad.getAdUnitId());
+
+            RetryLoading();
         }
     }
 
@@ -165,9 +171,7 @@ public class InterstitialWrapper extends TableLayout {
                 Log("Loading "+ request._adUnitId + " as Optimized with floor: " + bidFloor);
                 request._interstitial.loadAd();
             } else {
-                request._consecutiveAdFails++;
-                _isFirstResponseReceived = true;
-                request.RetryLoad();
+                request.OnLoadFail();
             }
         }, TimeoutInSeconds);
     }

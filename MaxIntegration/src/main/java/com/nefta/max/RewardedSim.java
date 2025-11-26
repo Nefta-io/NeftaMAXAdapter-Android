@@ -65,6 +65,10 @@ public class RewardedSim extends TableLayout {
             Log("Load failed " + adUnitId + ": " + maxError.getMessage());
 
             _rewarded = null;
+            OnLoadFail();
+        }
+
+        public void OnLoadFail() {
             _consecutiveAdFails++;
             RetryLoad();
 
@@ -129,6 +133,8 @@ public class RewardedSim extends TableLayout {
         @Override
         public void onAdDisplayFailed(@NonNull MaxAd ad, @NonNull MaxError maxError) {
             Log("onAdDisplayFailed "+ ad.getAdUnitId());
+
+            RetryLoading();
         }
     }
 
@@ -189,9 +195,7 @@ public class RewardedSim extends TableLayout {
                 Log("Loading "+ request._adUnitId + " as Optimized with floor: " + bidFloor);
                 request._rewarded.loadAd();
             } else {
-                request._consecutiveAdFails++;
-                _isFirstResponseReceived = true;
-                request.RetryLoad();
+                request.OnLoadFail();
             }
         }, TimeoutInSeconds);
     }
