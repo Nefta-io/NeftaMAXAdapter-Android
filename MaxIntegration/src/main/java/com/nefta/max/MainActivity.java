@@ -4,13 +4,14 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.view.View;
+import android.util.Log;
 
 import com.applovin.sdk.AppLovinMediationProvider;
 import com.applovin.sdk.AppLovinPrivacySettings;
 import com.applovin.sdk.AppLovinSdk;
 import com.applovin.sdk.AppLovinSdkConfiguration;
 import com.applovin.sdk.AppLovinSdkInitializationConfiguration;
+import com.nefta.sdk.InitConfiguration;
 import com.nefta.sdk.NeftaPlugin;
 
 import androidx.appcompat.app.AlertDialog;
@@ -38,13 +39,12 @@ public class MainActivity extends AppCompatActivity {
         DebugServer.Init(this, getIntent());
 
         NeftaPlugin.EnableLogging(true);
-        NeftaPlugin.SetExtraParameter(NeftaPlugin.ExtParam_TestGroup, "split-max");
-        NeftaPlugin.Init(getApplicationContext(), "5643649824063488");
-
-        SetTracking();
+        NeftaPlugin.Init(getApplicationContext(), "5643649824063488").OnReady = (InitConfiguration config) -> {
+            Log.i("NeftaPluginMAX", "Should bypass Nefta optimization? " + config._skipOptimization);
+        };
     }
 
-    private void SetTracking() {
+    public void SetTracking() {
         SharedPreferences sharedPreferences = getSharedPreferences(preferences, Context.MODE_PRIVATE);
         if (sharedPreferences.contains(trackingKey)) {
             boolean isTrackingAllowed = sharedPreferences.getBoolean(trackingKey, false);

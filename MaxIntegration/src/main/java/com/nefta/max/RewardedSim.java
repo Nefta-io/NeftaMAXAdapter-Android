@@ -1,5 +1,8 @@
 package com.nefta.max;
 
+import static com.applovin.mediation.adapter.MaxAdapterError.ERROR_CODE_INTERNAL_ERROR;
+import static com.applovin.mediation.adapter.MaxAdapterError.ERROR_CODE_NO_FILL;
+
 import android.app.Activity;
 import android.content.Context;
 import android.os.Handler;
@@ -23,18 +26,13 @@ import com.applovin.mediation.MaxError;
 import com.applovin.mediation.MaxNetworkResponseInfo;
 import com.applovin.mediation.MaxReward;
 import com.applovin.mediation.MaxRewardedAdListener;
-import com.applovin.mediation.adapter.MaxAdapterError;
 import com.applovin.mediation.adapters.NeftaMediationAdapter;
 import com.applovin.mediation.ads.MaxRewardedAd;
-import com.applovin.mediation.nativeAds.MaxNativeAd;
-import com.applovin.sdk.AppLovinSdkUtils;
 import com.nefta.sdk.AdInsight;
 import com.nefta.sdk.Insights;
 import com.nefta.sdk.NeftaPlugin;
 
-import java.util.List;
 import java.util.Locale;
-
 
 public class RewardedSim extends TableLayout {
     private final int TimeoutInSeconds = 5;
@@ -142,7 +140,7 @@ public class RewardedSim extends TableLayout {
     private AdRequest _adRequestB;
     private boolean _isFirstResponseReceived = false;
 
-    private final MainActivity _activity;
+    private Activity _activity;
     private Switch _loadSwitch;
     private Button _showButton;
     private TextView _status;
@@ -216,12 +214,16 @@ public class RewardedSim extends TableLayout {
 
     public RewardedSim(Context context) {
         super(context);
-        _activity = (MainActivity)context;
+        if (context instanceof Activity) {
+            _activity = (Activity) context;
+        }
     }
 
     public RewardedSim(Context context, @Nullable AttributeSet attrs) {
-        super(context);
-        _activity = (MainActivity)context;
+        super(context, attrs);
+        if (context instanceof Activity) {
+            _activity = (Activity) context;
+        }
     }
 
     @Override
@@ -261,12 +263,11 @@ public class RewardedSim extends TableLayout {
         });
         _showButton.setEnabled(false);
 
-
         _aStatus = findViewById(R.id.rewardedSim_statusA);
         _aFill2 = findViewById(R.id.rewardedSim_fill2A);
-        _aFill2.setOnClickListener(v -> SimOnAdLoadedEvent(_adRequestA, 2.0));
+        _aFill2.setOnClickListener(v -> SimOnAdLoadedEvent(_adRequestA, true));
         _aFill1 = findViewById(R.id.rewardedSim_fill1A);
-        _aFill1.setOnClickListener(v -> SimOnAdLoadedEvent(_adRequestA, 1.0));
+        _aFill1.setOnClickListener(v -> SimOnAdLoadedEvent(_adRequestA, false));
         _aNoFill = findViewById(R.id.rewardedSim_noFillA);
         _aNoFill.setOnClickListener(v -> SimOnAdFailedEvent(_adRequestA, 2));
         _aOther = findViewById(R.id.rewardedSim_OtherA);
@@ -275,16 +276,14 @@ public class RewardedSim extends TableLayout {
 
         _bStatus = findViewById(R.id.rewardedSim_statusB);
         _bFill2 = findViewById(R.id.rewardedSim_fill2B);
-        _bFill2.setOnClickListener(v -> SimOnAdLoadedEvent(_adRequestB, 2.0));
+        _bFill2.setOnClickListener(v -> SimOnAdLoadedEvent(_adRequestB, true));
         _bFill1 = findViewById(R.id.rewardedSim_fill1B);
-        _bFill1.setOnClickListener(v -> SimOnAdLoadedEvent(_adRequestB, 1.0));
+        _bFill1.setOnClickListener(v -> SimOnAdLoadedEvent(_adRequestB, false));
         _bNoFill = findViewById(R.id.rewardedSim_noFillB);
         _bNoFill.setOnClickListener(v -> SimOnAdFailedEvent(_adRequestB, 2));
         _bOther = findViewById(R.id.rewardedSim_OtherB);
         _bOther.setOnClickListener(v -> SimOnAdFailedEvent(_adRequestB, 0));
         ToggleTrackB(false, true);
-
-        setVisibility(BuildConfig.IS_SIMULATOR ? View.VISIBLE : View.GONE);
     }
 
     private boolean TryShow(AdRequest request) {
@@ -446,12 +445,13 @@ public class RewardedSim extends TableLayout {
         _bOther.refreshDrawableState();
     }
 
-    private void SimOnAdLoadedEvent(AdRequest request, double revenue) {
+    private void SimOnAdLoadedEvent(AdRequest request, boolean isHigh) {
+        double revenue = isHigh ? 0.002 : 0.001;
         if (request._rewarded._ad != null) {
             request._rewarded._ad = null;
 
             if (request == _adRequestA) {
-                if (revenue >= 2) {
+                if (isHigh) {
                     _aFill2.setBackgroundResource(R.drawable.button);
                     _aFill2.setEnabled(false);
                 } else {
@@ -459,7 +459,7 @@ public class RewardedSim extends TableLayout {
                     _aFill1.setEnabled(false);
                 }
             } else {
-                if (revenue >= 2) {
+                if (isHigh) {
                     _bFill2.setBackgroundResource(R.drawable.button);
                     _bFill2.setEnabled(false);
                 } else {
@@ -469,126 +469,12 @@ public class RewardedSim extends TableLayout {
             }
             return;
         }
-        MaxAd ad = new MaxAd() {
-            @Override
-            public MaxAdFormat getFormat() {
-                return MaxAdFormat.REWARDED;
-            }
-
-            @Override
-            public AppLovinSdkUtils.Size getSize() {
-                return AppLovinSdkUtils.Size.ZERO;
-            }
-
-            @Override
-            public String getAdUnitId() {
-                return request._adUnitId;
-            }
-
-            @Override
-            public String getNetworkName() {
-                return "simulator";
-            }
-
-            @Override
-            public String getNetworkPlacement() {
-                return null;
-            }
-
-            @Override
-            public String getPlacement() {
-                return null;
-            }
-
-            @Override
-            public MaxAdWaterfallInfo getWaterfall() {
-                return new MaxAdWaterfallInfo() {
-                    @Override
-                    public MaxAd getLoadedAd() {
-                        return null;
-                    }
-
-                    @Override
-                    public String getName() {
-                        return "simulator waterfall";
-                    }
-
-                    @Override
-                    public String getTestName() {
-                        return "simulator waterfall test";
-                    }
-
-                    @Override
-                    public List<MaxNetworkResponseInfo> getNetworkResponses() {
-                        return null;
-                    }
-
-                    @Override
-                    public long getLatencyMillis() {
-                        return 0;
-                    }
-                };
-            }
-
-            @Override
-            public long getRequestLatencyMillis() {
-                return 0;
-            }
-
-            @Nullable
-            @Override
-            public String getCreativeId() {
-                return null;
-            }
-
-            @Override
-            public double getRevenue() {
-                return revenue;
-            }
-
-            @Override
-            public String getRevenuePrecision() {
-                return "exact";
-            }
-
-            @Nullable
-            @Override
-            public String getDspName() {
-                return null;
-            }
-
-            @Nullable
-            @Override
-            public String getDspId() {
-                return null;
-            }
-
-            @Override
-            public String getAdValue(String s) {
-                return null;
-            }
-
-            @Override
-            public String getAdValue(String s, String s1) {
-                return null;
-            }
-
-            @Nullable
-            @Override
-            public MaxNativeAd getNativeAd() {
-                return null;
-            }
-
-            @Nullable
-            @Override
-            public String getAdReviewCreativeId() {
-                return "simulator creative";
-            }
-        };
+        MaxAd ad = new SMaxAd(request._adUnitId, MaxAdFormat.REWARDED, revenue,
+            new MaxNetworkResponseInfo.AdLoadState[] { MaxNetworkResponseInfo.AdLoadState.AD_LOADED, MaxNetworkResponseInfo.AdLoadState.AD_LOAD_NOT_ATTEMPTED });
 
         if (request == _adRequestA) {
             ToggleTrackA(false, false);
-            if (revenue >= 2) {
+            if (isHigh) {
                 _aFill2.setBackgroundResource(R.drawable.button_fill);
                 _aFill2.setEnabled(true);
             } else {
@@ -598,7 +484,7 @@ public class RewardedSim extends TableLayout {
             _aStatus.setText(request._adUnitId + " loaded " + revenue);
         } else {
             ToggleTrackB(false, false);
-            if (revenue >= 2) {
+            if (isHigh) {
                 _bFill2.setBackgroundResource(R.drawable.button_fill);
                 _bFill2.setEnabled(true);
             } else {
@@ -628,7 +514,45 @@ public class RewardedSim extends TableLayout {
             ToggleTrackB(false, false);
         }
 
-        MaxError error = status == 2 ? MaxAdapterError.NO_FILL : MaxAdapterError.INTERNAL_ERROR;
+        MaxError error = new MaxError() {
+            @Override
+            public int getCode() {
+                return status == 2 ? ERROR_CODE_NO_FILL : ERROR_CODE_INTERNAL_ERROR;
+            }
+
+            @Override
+            public String getMessage() {
+                return null;
+            }
+
+            @Override
+            public int getMediatedNetworkErrorCode() {
+                return 0;
+            }
+
+            @Override
+            public String getMediatedNetworkErrorMessage() {
+                return null;
+            }
+
+            @Override
+            public MaxAdWaterfallInfo getWaterfall() {
+                return SMaxAd.GetWaterfall(new MaxNetworkResponseInfo.AdLoadState[] {
+                        MaxNetworkResponseInfo.AdLoadState.FAILED_TO_LOAD,
+                        MaxNetworkResponseInfo.AdLoadState.FAILED_TO_LOAD
+                });
+            }
+
+            @Override
+            public long getRequestLatencyMillis() {
+                return 0;
+            }
+
+            @Override
+            public String getAdLoadFailureInfo() {
+                return null;
+            }
+        };
         request._rewarded.SimFailLoad(error);
     }
 }

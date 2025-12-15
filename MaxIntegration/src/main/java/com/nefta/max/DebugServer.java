@@ -10,7 +10,9 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
 
+import com.applovin.sdk.AppLovinSdk;
 import com.nefta.sdk.Insights;
 import com.nefta.sdk.NAd;
 import com.nefta.sdk.NBanner;
@@ -62,19 +64,39 @@ public class DebugServer {
     private SimpleDateFormat _dateTimeFormat;
     private final List<String> _logLines;
     private ExecutorService _executor;
-    private static DebugServer _referenceHolder;
+    private boolean _isSimulator;
+    private boolean _isTrackingSet;
+    private static DebugServer _instance;
 
-    public static void Init(Activity activity, Intent intent) {
-        if (_referenceHolder == null) {
-            _referenceHolder = new DebugServer(activity, intent);
+    public static void Init(MainActivity activity, Intent intent) {
+        if (_instance != null) {
+            return;
         }
 
-        activity.findViewById(R.id.interstitial).setVisibility(!BuildConfig.IS_SIMULATOR ? View.VISIBLE : View.GONE);
-        activity.findViewById(R.id.rewarded).setVisibility(!BuildConfig.IS_SIMULATOR ? View.VISIBLE : View.GONE);
+        new DebugServer(activity, intent);
+
+        TextView title = activity.findViewById(R.id.title);
+        title.setText("MAX Integration "+ AppLovinSdk.VERSION);
+        title.setOnClickListener(v -> _instance.ToggleUI(activity, !_instance._isSimulator));
+        _instance.ToggleUI(activity, BuildConfig.IS_SIMULATOR);
+    }
+
+    private void ToggleUI(MainActivity activity, boolean isSimulator) {
+        _isSimulator = isSimulator;
+
+        activity.findViewById(R.id.interstitialSim).setVisibility(_isSimulator ? View.VISIBLE : View.GONE);
+        activity.findViewById(R.id.rewardedSim).setVisibility(_isSimulator ? View.VISIBLE : View.GONE);
+
+        activity.findViewById(R.id.interstitial).setVisibility(_isSimulator ? View.GONE : View.VISIBLE);
+        activity.findViewById(R.id.rewarded).setVisibility(_isSimulator ? View.GONE : View.VISIBLE);
+        if (!isSimulator && !_isTrackingSet) {
+            _isTrackingSet = true;
+            activity.SetTracking();
+        }
     }
 
     private DebugServer(Activity activity, Intent intent) {
-        _referenceHolder = this;
+        _instance = this;
 
         _activity = activity;
         _mainHandler = new Handler(Looper.getMainLooper());
@@ -120,7 +142,7 @@ public class DebugServer {
     public void Destroy() {
         StopBroadcastServer();
         _activity = null;
-        _referenceHolder = null;
+        _instance = null;
     }
 
     private void startBroadcastServer() {
@@ -384,7 +406,7 @@ public class DebugServer {
                         if (segments.length > 11) {
                             networkStatus = segments[11];
                         }
-                        NeftaPlugin.OnExternalMediationResponse(provider, id, id2, revenue, precision, status, providerStatus, networkStatus);
+                        NeftaPlugin.OnExternalMediationResponse(provider, id, id2, revenue, precision, status, providerStatus, networkStatus, null);
                         SendUdp(address, port, sourceName, "return|add_external_mediation_request");
                         break;
                     }

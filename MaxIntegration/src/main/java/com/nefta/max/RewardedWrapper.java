@@ -1,5 +1,6 @@
 package com.nefta.max;
 
+import android.app.Activity;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
@@ -16,16 +17,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.applovin.mediation.MaxAd;
-import com.applovin.mediation.MaxAdFormat;
 import com.applovin.mediation.MaxAdRevenueListener;
-import com.applovin.mediation.MaxAdWaterfallInfo;
 import com.applovin.mediation.MaxError;
 import com.applovin.mediation.MaxReward;
 import com.applovin.mediation.MaxRewardedAdListener;
 import com.applovin.mediation.adapters.NeftaMediationAdapter;
 import com.applovin.mediation.ads.MaxRewardedAd;
-import com.applovin.mediation.nativeAds.MaxNativeAd;
-import com.applovin.sdk.AppLovinSdkUtils;
 import com.nefta.sdk.AdInsight;
 import com.nefta.sdk.Insights;
 import com.nefta.sdk.NeftaPlugin;
@@ -140,7 +137,7 @@ public class RewardedWrapper extends TableLayout {
     private AdRequest _adRequestB;
     private boolean _isFirstResponseReceived = false;
 
-    private MainActivity _activity;
+    private Activity _activity;
     private Switch _loadSwitch;
     private Button _showButton;
     private TextView _status;
@@ -202,12 +199,16 @@ public class RewardedWrapper extends TableLayout {
 
     public RewardedWrapper(Context context) {
         super(context);
-        _activity = (MainActivity) context;
+        if (context instanceof Activity) {
+            _activity = (Activity) context;
+        }
     }
 
     public RewardedWrapper(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
-        _activity = (MainActivity) context;
+        if (context instanceof Activity) {
+            _activity = (Activity) context;
+        }
     }
 
     @Override

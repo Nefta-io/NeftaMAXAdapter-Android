@@ -1,5 +1,6 @@
 package com.nefta.max;
 
+import android.app.Activity;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
@@ -130,7 +131,7 @@ public class InterstitialWrapper extends TableLayout {
     private AdRequest _adRequestB;
     private boolean _isFirstResponseReceived = false;
 
-    private MainActivity _activity;
+    private Activity _activity;
     private Switch _loadSwitch;
     private Button _showButton;
     private TextView _status;
@@ -192,12 +193,16 @@ public class InterstitialWrapper extends TableLayout {
 
     public InterstitialWrapper(Context context) {
         super(context);
-        _activity = (MainActivity)context;
+        if (context instanceof Activity) {
+            _activity = (Activity) context;
+        }
     }
 
     public InterstitialWrapper(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
-        _activity = (MainActivity)context;
+        if (context instanceof Activity) {
+            _activity = (Activity) context;
+        }
     }
 
     @Override
