@@ -17,48 +17,53 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.applovin.mediation.MaxAd;
-import com.applovin.mediation.MaxAdListener;
 import com.applovin.mediation.MaxAdRevenueListener;
 import com.applovin.mediation.MaxError;
+import com.applovin.mediation.MaxReward;
+import com.applovin.mediation.MaxRewardedAdListener;
 import com.applovin.mediation.adapters.NeftaMediationAdapter;
-import com.applovin.mediation.ads.MaxInterstitialAd;
+import com.applovin.mediation.ads.MaxRewardedAd;
 import com.nefta.sdk.AdInsight;
 import com.nefta.sdk.Insights;
 import com.nefta.sdk.NeftaPlugin;
 
 import java.util.Locale;
 
-public class InterstitialWrapper extends TableLayout {
-    private final String AdUnitA = "87f1b4837da231e5";
-    private final String AdUnitB = "7267e7f4187b95b2";
+public class Rewarded extends TableLayout {
+    private final String AdUnitA = "a4b93fe91b278c75";
+    private final String AdUnitB = "72458470d47ee781";
     private final int TimeoutInSeconds = 5;
 
     private enum State {
         Idle,
         LoadingWithInsights,
         Loading,
-        Ready
+        Ready,
+        Shown
     }
 
-    private class AdRequest implements MaxAdListener, MaxAdRevenueListener {
+    private class Track implements MaxRewardedAdListener, MaxAdRevenueListener {
         public final String _adUnitId;
-        public MaxInterstitialAd _interstitial;
+        public MaxRewardedAd _rewarded;
         public State _state = State.Idle;
         public AdInsight _insight;
         public double _revenue;
         public int _consecutiveAdFails;
 
-        public AdRequest(String adUnit) {
+        public Track(String adUnit) {
             _adUnitId = adUnit;
+
+            _rewarded = MaxRewardedAd.getInstance(_adUnitId);
+            _rewarded.setListener(this);
+            _rewarded.setRevenueListener(this);
         }
 
         @Override
         public void onAdLoadFailed(@NonNull String adUnitId, @NonNull MaxError maxError) {
-            NeftaMediationAdapter.OnExternalMediationRequestFailed(_interstitial, maxError);
+            NeftaMediationAdapter.OnExternalMediationRequestFailed(_rewarded, maxError);
 
             Log("Load failed " + adUnitId + ": " + maxError.getMessage());
 
-            _interstitial = null;
             OnLoadFail();
         }
 
@@ -71,7 +76,7 @@ public class InterstitialWrapper extends TableLayout {
 
         @Override
         public void onAdLoaded(@NonNull MaxAd ad) {
-            NeftaMediationAdapter.OnExternalMediationRequestLoaded(_interstitial, ad);
+            NeftaMediationAdapter.OnExternalMediationRequestLoaded(_rewarded, ad);
 
             Log("Loaded  "+ _adUnitId +" at: "+ ad.getRevenue());
 
@@ -89,7 +94,7 @@ public class InterstitialWrapper extends TableLayout {
             long waitTimeInMs = new int[]{0, 2, 4, 8, 16, 32, 64}[Math.min(_consecutiveAdFails, 6)] * 1000L;
             _handler.postDelayed(() -> {
                 _state = State.Idle;
-                RetryLoading();
+                RetryLoadTracks();
             }, waitTimeInMs);
         }
 
@@ -102,33 +107,40 @@ public class InterstitialWrapper extends TableLayout {
 
         @Override
         public void onAdDisplayed(@NonNull MaxAd ad) {
-            Log("onAdDisplayed"+ ad.getAdUnitId());
+            Log("onAdDisplayed "+ ad.getAdUnitId());
         }
 
         @Override
         public void onAdClicked(@NonNull MaxAd ad) {
             NeftaMediationAdapter.OnExternalMediationClick(ad);
 
-            Log("onAdClicked "+ ad.getAdUnitId());
+            Log( "onAdClicked "+ ad.getAdUnitId());
+        }
+
+        @Override
+        public void onUserRewarded(@NonNull MaxAd ad, @NonNull MaxReward maxReward) {
+            Log("onUserRewarded "+ ad.getAdUnitId());
         }
 
         @Override
         public void onAdHidden(@NonNull MaxAd ad) {
             Log("onAdHidden "+ ad.getAdUnitId());
 
-            RetryLoading();
+            _state = State.Idle;
+
+            RetryLoadTracks();
         }
 
         @Override
         public void onAdDisplayFailed(@NonNull MaxAd ad, @NonNull MaxError maxError) {
             Log("onAdDisplayFailed "+ ad.getAdUnitId());
 
-            RetryLoading();
+            RetryLoadTracks();
         }
     }
 
-    private AdRequest _adRequestA;
-    private AdRequest _adRequestB;
+    private Track _trackA;
+    private Track _trackB;
     private boolean _isFirstResponseReceived = false;
 
     private Activity _activity;
@@ -138,67 +150,66 @@ public class InterstitialWrapper extends TableLayout {
 
     private Handler _handler;
 
-    private void StartLoading() {
-        Load(_adRequestA, _adRequestB._state);
-        Load(_adRequestB, _adRequestA._state);
+    private void LoadTracks() {
+        LoadTrack(_trackA, _trackB._state);
+        LoadTrack(_trackB, _trackA._state);
     }
 
-    private void Load(AdRequest request, State otherState) {
-        if (request._state == State.Idle) {
+    private void LoadTrack(Track track, State otherState) {
+        if (track._state == State.Idle) {
             if (otherState != State.LoadingWithInsights) {
-                GetInsightsAndLoad(request);
-            } else if (_isFirstResponseReceived) {
-                LoadDefault(request);
+                if (_isFirstResponseReceived) {
+                    LoadDefault(track);
+                }
+            } else {
+                GetInsightsAndLoad(track);
             }
         }
     }
 
-    private void GetInsightsAndLoad(AdRequest request) {
-        request._state = State.LoadingWithInsights;
+    private void GetInsightsAndLoad(Track track) {
+        track._state = State.LoadingWithInsights;
 
-        NeftaPlugin._instance.GetInsights(Insights.INTERSTITIAL, request._insight, (Insights insights) -> {
+        NeftaPlugin._instance.GetInsights(Insights.REWARDED, track._insight, (Insights insights) -> {
             Log("LoadWithInsights: " + insights);
-            if (insights._interstitial != null) {
-                request._insight = insights._interstitial;
-                String bidFloor = String.format(Locale.ROOT, "%.10f", request._insight._floorPrice);
-                request._interstitial = new MaxInterstitialAd(request._adUnitId);
-                request._interstitial.setListener(request);
-                request._interstitial.setRevenueListener(request);
-                request._interstitial.setExtraParameter("disable_auto_retries", "true");
-                request._interstitial.setExtraParameter("jC7Fp", bidFloor);
+            if (insights._rewarded != null) {
+                track._insight = insights._rewarded;
+                String bidFloor = String.format(Locale.ROOT, "%.10f", track._insight._floorPrice);
 
-                NeftaMediationAdapter.OnExternalMediationRequest(request._interstitial, request._insight);
+                track._rewarded.setExtraParameter("disable_auto_retries", "true");
+                track._rewarded.setExtraParameter("jC7Fp", bidFloor);
 
-                Log("Loading "+ request._adUnitId + " as Optimized with floor: " + bidFloor);
-                request._interstitial.loadAd();
+                NeftaMediationAdapter.OnExternalMediationRequest(track._rewarded, track._insight);
+
+                Log("Loading "+ track._adUnitId + " as Optimized with floor: " + bidFloor);
+                track._rewarded.loadAd();
             } else {
-                request.OnLoadFail();
+                track.OnLoadFail();
             }
         }, TimeoutInSeconds);
     }
 
-    private void LoadDefault(AdRequest request) {
-        request._state = State.Loading;
+    private void LoadDefault(Track track) {
+        track._state = State.Loading;
 
-        Log("Loading "+ request._adUnitId + " as Default");
+        Log("Loading "+ track._adUnitId + " as Default");
 
-        request._interstitial = new MaxInterstitialAd(request._adUnitId);
-        request._interstitial.setListener(request);
-        request._interstitial.setRevenueListener(request);
+        track._rewarded.setExtraParameter("disable_auto_retries", "false");
+        track._rewarded.setExtraParameter("jC7Fp", "");
 
-        NeftaMediationAdapter.OnExternalMediationRequest(request._interstitial);
+        NeftaMediationAdapter.OnExternalMediationRequest(track._rewarded);
 
-        request._interstitial.loadAd();
+        track._rewarded.loadAd();
     }
 
-    public InterstitialWrapper(Context context) {
+    public Rewarded(Context context) {
         super(context);
         if (context instanceof Activity) {
             _activity = (Activity) context;
         }
     }
 
-    public InterstitialWrapper(Context context, @Nullable AttributeSet attrs) {
+    public Rewarded(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         if (context instanceof Activity) {
             _activity = (Activity) context;
@@ -209,36 +220,36 @@ public class InterstitialWrapper extends TableLayout {
     protected void onFinishInflate() {
         super.onFinishInflate();
 
-        _loadSwitch = findViewById(R.id.interstitial_load);
-        _showButton = findViewById(R.id.interstitial_show);
-        _status = findViewById(R.id.interstitial_status);
+        _trackA = new Track(AdUnitA);
+        _trackB = new Track(AdUnitB);
+
+        _loadSwitch = findViewById(R.id.rewarded_load);;
+        _showButton = findViewById(R.id.rewarded_show);;
+        _status = findViewById(R.id.rewarded_status);;
 
         _handler = new Handler(Looper.getMainLooper());
-
-        _adRequestA = new AdRequest(AdUnitA);
-        _adRequestB = new AdRequest(AdUnitB);
 
         _loadSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    StartLoading();
+                    LoadTracks();
                 }
             }
         });
         _showButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View view) {
                 boolean isShown = false;
-                if (_adRequestA._state == State.Ready) {
-                    if (_adRequestB._state == State.Ready && _adRequestB._revenue > _adRequestA._revenue) {
-                        isShown = TryShow(_adRequestB);
+                if (_trackA._state == State.Ready) {
+                    if (_trackB._state == State.Ready && _trackB._revenue > _trackA._revenue) {
+                        isShown = TryShow(_trackB);
                     }
                     if (!isShown) {
-                        isShown = TryShow(_adRequestA);
+                        isShown = TryShow(_trackA);
                     }
                 }
-                if (!isShown && _adRequestB._state == State.Ready) {
-                    TryShow(_adRequestB);
+                if (!isShown && _trackB._state == State.Ready) {
+                    TryShow(_trackB);
                 }
                 UpdateShowButton();
             }
@@ -246,21 +257,21 @@ public class InterstitialWrapper extends TableLayout {
         _showButton.setEnabled(false);
     }
 
-    private boolean TryShow(AdRequest request) {
-        request._state = State.Idle;
+    private boolean TryShow(Track request) {
         request._revenue = -1;
-
-        if (request._interstitial.isReady()) {
-            request._interstitial.showAd(_activity);
+        if (request._rewarded.isReady()) {
+            request._state = State.Shown;
+            request._rewarded.showAd(_activity);
             return true;
         }
-        RetryLoading();
+        request._state = State.Idle;
+        RetryLoadTracks();
         return false;
     }
 
-    public void RetryLoading() {
+    public void RetryLoadTracks() {
         if (_loadSwitch.isChecked()) {
-            StartLoading();
+            LoadTracks();
         }
     }
 
@@ -270,15 +281,15 @@ public class InterstitialWrapper extends TableLayout {
         }
 
         _isFirstResponseReceived = true;
-        RetryLoading();
+        RetryLoadTracks();
     }
 
     private void UpdateShowButton() {
-        _showButton.setEnabled(_adRequestA._state == State.Ready || _adRequestB._state == State.Ready);
+        _showButton.setEnabled(_trackA._state == State.Ready || _trackB._state == State.Ready);
     }
 
     void Log(String log) {
         _status.setText(log);
-        Log.i("NeftaPluginMAX", "Interstitial " + log);
+        Log.i("NeftaPluginMAX", "Rewarded " + log);
     }
 }

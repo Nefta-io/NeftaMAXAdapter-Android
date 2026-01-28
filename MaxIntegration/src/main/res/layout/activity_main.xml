@@ -325,7 +325,7 @@
 
             <TableRow>
 
-                <com.nefta.max.InterstitialWrapper
+                <com.nefta.max.Interstitial
                     android:id="@+id/interstitial"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -357,13 +357,13 @@
                             android:text="Status"
                             android:textColor="#000000" />
                     </TableRow>
-                </com.nefta.max.InterstitialWrapper>
+                </com.nefta.max.Interstitial>
             </TableRow>
 
 
             <TableRow>
 
-                <com.nefta.max.RewardedWrapper
+                <com.nefta.max.Rewarded
                     android:id="@+id/rewarded"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -396,34 +396,9 @@
                             android:text="Status"
                             android:textColor="#000000" />
                     </TableRow>
-                </com.nefta.max.RewardedWrapper>
+                </com.nefta.max.Rewarded>
             </TableRow>
         </TableLayout>
-
-        <com.nefta.max.SimulatorAd
-            android:id="@+id/simulator_ad"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="#FFFFFFFF"
-            android:visibility="visible">
-
-            <Button
-                android:id="@+id/ad_close"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="right|top"
-                android:background="@drawable/button"
-                android:text="X"
-                android:textColor="#FFFFFF" />
-
-            <TextView
-                android:id="@+id/ad_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="Ad"
-                android:textSize="34sp" />
-        </com.nefta.max.SimulatorAd>
 
     </FrameLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

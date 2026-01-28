@@ -9,7 +9,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.Switch;
 import android.widget.TableLayout;
@@ -28,6 +27,8 @@ import com.applovin.mediation.MaxReward;
 import com.applovin.mediation.MaxRewardedAdListener;
 import com.applovin.mediation.adapters.NeftaMediationAdapter;
 import com.applovin.mediation.ads.MaxRewardedAd;
+import com.nefta.networkconfig.Callback;
+import com.nefta.networkconfig.NetworkConfig;
 import com.nefta.sdk.AdInsight;
 import com.nefta.sdk.Insights;
 import com.nefta.sdk.NeftaPlugin;
@@ -41,10 +42,11 @@ public class RewardedSim extends TableLayout {
         Idle,
         LoadingWithInsights,
         Loading,
-        Ready
+        Ready,
+        Shown
     }
 
-    private class AdRequest implements MaxRewardedAdListener, MaxAdRevenueListener {
+    private class Track implements MaxRewardedAdListener, MaxAdRevenueListener {
         public final String _adUnitId;
         public SimRewarded _rewarded;
         public State _state = State.Idle;
@@ -52,8 +54,12 @@ public class RewardedSim extends TableLayout {
         public double _revenue;
         public int _consecutiveAdFails;
 
-        public AdRequest(String adUnit) {
+        public Track(String adUnit) {
             _adUnitId = adUnit;
+
+            _rewarded = new SimRewarded(_adUnitId);
+            _rewarded.setListener(this);
+            _rewarded.setRevenueListener(this);
         }
 
         @Override
@@ -62,7 +68,6 @@ public class RewardedSim extends TableLayout {
 
             Log("Load failed " + adUnitId + ": " + maxError.getMessage());
 
-            _rewarded = null;
             OnLoadFail();
         }
 
@@ -93,7 +98,7 @@ public class RewardedSim extends TableLayout {
             long waitTimeInMs = new int[]{0, 2, 4, 8, 16, 32, 64}[Math.min(_consecutiveAdFails, 6)] * 1000L;
             _handler.postDelayed(() -> {
                 _state = State.Idle;
-                RetryLoading();
+                RetryLoadTracks();
             }, waitTimeInMs);
         }
 
@@ -125,19 +130,21 @@ public class RewardedSim extends TableLayout {
         public void onAdHidden(@NonNull MaxAd ad) {
             Log("onAdHidden "+ ad.getAdUnitId());
 
-            RetryLoading();
+            _state = State.Idle;
+
+            RetryLoadTracks();
         }
 
         @Override
         public void onAdDisplayFailed(@NonNull MaxAd ad, @NonNull MaxError maxError) {
             Log("onAdDisplayFailed "+ ad.getAdUnitId());
 
-            RetryLoading();
+            RetryLoadTracks();
         }
     }
 
-    private AdRequest _adRequestA;
-    private AdRequest _adRequestB;
+    private Track _trackA;
+    private Track _trackB;
     private boolean _isFirstResponseReceived = false;
 
     private Activity _activity;
@@ -159,57 +166,56 @@ public class RewardedSim extends TableLayout {
 
     private Handler _handler;
 
-    private void StartLoading() {
-        Load(_adRequestA, _adRequestB._state);
-        Load(_adRequestB, _adRequestA._state);
+    private void LoadTracks() {
+        LoadTrack(_trackA, _trackB._state);
+        LoadTrack(_trackB, _trackA._state);
     }
 
-    private void Load(AdRequest request, State otherState) {
-        if (request._state == State.Idle) {
-            if (otherState != State.LoadingWithInsights) {
-                GetInsightsAndLoad(request);
-            } else if (_isFirstResponseReceived) {
-                LoadDefault(request);
+    private void LoadTrack(Track track, State otherState) {
+        if (track._state == State.Idle) {
+            if (otherState == State.LoadingWithInsights) {
+                if (_isFirstResponseReceived) {
+                    LoadDefault(track);
+                }
+            } else {
+                GetInsightsAndLoad(track);
             }
         }
     }
 
-    private void GetInsightsAndLoad(AdRequest request) {
-        request._state = State.LoadingWithInsights;
+    private void GetInsightsAndLoad(Track track) {
+        track._state = State.LoadingWithInsights;
 
-        NeftaPlugin._instance.GetInsights(Insights.REWARDED, request._insight, (Insights insights) -> {
+        NeftaPlugin._instance.GetInsights(Insights.REWARDED, track._insight, (Insights insights) -> {
             Log("LoadWithInsights: " + insights);
             if (insights._rewarded != null) {
-                request._insight = insights._rewarded;
-                String bidFloor = String.format(Locale.ROOT, "%.10f", request._insight._floorPrice);
-                request._rewarded = new SimRewarded(request._adUnitId);
-                request._rewarded.setListener(request);
-                request._rewarded.setRevenueListener(request);
-                request._rewarded.setExtraParameter("disable_auto_retries", "true");
-                request._rewarded.setExtraParameter("jC7Fp", bidFloor);
+                track._insight = insights._rewarded;
+                String bidFloor = String.format(Locale.ROOT, "%.10f", track._insight._floorPrice);
 
-                NeftaMediationAdapter.OnExternalMediationRequest(request._rewarded._instance, request._insight);
+                track._rewarded.setExtraParameter("disable_auto_retries", "true");
+                track._rewarded.setExtraParameter("jC7Fp", bidFloor);
 
-                Log("Loading "+ request._adUnitId + " as Optimized with floor: " + bidFloor);
-                request._rewarded.loadAd();
+                NeftaMediationAdapter.OnExternalMediationRequest(track._rewarded._instance, track._insight);
+
+                Log("Loading "+ track._adUnitId + " as Optimized with floor: " + bidFloor);
+                track._rewarded.loadAd();
             } else {
-                request.OnLoadFail();
+                track.OnLoadFail();
             }
         }, TimeoutInSeconds);
     }
 
-    private void LoadDefault(AdRequest request) {
-        request._state = State.Loading;
+    private void LoadDefault(Track track) {
+        track._state = State.Loading;
 
-        Log("Loading "+ request._adUnitId + " as Default");
+        Log("Loading "+ track._adUnitId + " as Default");
 
-        request._rewarded = new SimRewarded(request._adUnitId);
-        request._rewarded.setListener(request);
-        request._rewarded.setRevenueListener(request);
+        track._rewarded.setExtraParameter("disable_auto_retries", "false");
+        track._rewarded.setExtraParameter("jC7Fp", "");
 
-        NeftaMediationAdapter.OnExternalMediationRequest(request._rewarded._instance);
+        NeftaMediationAdapter.OnExternalMediationRequest(track._rewarded._instance);
 
-        request._rewarded.loadAd();
+        track._rewarded.loadAd();
     }
 
     public RewardedSim(Context context) {
@@ -236,28 +242,28 @@ public class RewardedSim extends TableLayout {
 
         _handler = new Handler(Looper.getMainLooper());
 
-        String adUnitA = "Track A";
-        _adRequestA = new AdRequest(adUnitA);
-        String adUnitB = "Track B";
-        _adRequestB = new AdRequest(adUnitB);
+        String adUnitA = "Rewarded Track A";
+        _trackA = new Track(adUnitA);
+        String adUnitB = "Rewarded Track B";
+        _trackB = new Track(adUnitB);
 
         _loadSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
-                StartLoading();
+                LoadTracks();
             }
         });
         _showButton.setOnClickListener(view -> {
             boolean isShown = false;
-            if (_adRequestA._state == State.Ready) {
-                if (_adRequestB._state == State.Ready && _adRequestB._revenue > _adRequestA._revenue) {
-                    isShown = TryShow(_adRequestB);
+            if (_trackA._state == State.Ready) {
+                if (_trackB._state == State.Ready && _trackB._revenue > _trackA._revenue) {
+                    isShown = TryShow(_trackB);
                 }
                 if (!isShown) {
-                    isShown = TryShow(_adRequestA);
+                    isShown = TryShow(_trackA);
                 }
             }
-            if (!isShown && _adRequestB._state == State.Ready) {
-                TryShow(_adRequestB);
+            if (!isShown && _trackB._state == State.Ready) {
+                TryShow(_trackB);
             }
             UpdateShowButton();
         });
@@ -265,42 +271,42 @@ public class RewardedSim extends TableLayout {
 
         _aStatus = findViewById(R.id.rewardedSim_statusA);
         _aFill2 = findViewById(R.id.rewardedSim_fill2A);
-        _aFill2.setOnClickListener(v -> SimOnAdLoadedEvent(_adRequestA, true));
+        _aFill2.setOnClickListener(v -> SimOnAdLoadedEvent(_trackA, true));
         _aFill1 = findViewById(R.id.rewardedSim_fill1A);
-        _aFill1.setOnClickListener(v -> SimOnAdLoadedEvent(_adRequestA, false));
+        _aFill1.setOnClickListener(v -> SimOnAdLoadedEvent(_trackA, false));
         _aNoFill = findViewById(R.id.rewardedSim_noFillA);
-        _aNoFill.setOnClickListener(v -> SimOnAdFailedEvent(_adRequestA, 2));
+        _aNoFill.setOnClickListener(v -> SimOnAdFailedEvent(_trackA, 2));
         _aOther = findViewById(R.id.rewardedSim_OtherA);
-        _aOther.setOnClickListener(v -> SimOnAdFailedEvent(_adRequestA, 0));
+        _aOther.setOnClickListener(v -> SimOnAdFailedEvent(_trackA, 0));
         ToggleTrackA(false, true);
 
         _bStatus = findViewById(R.id.rewardedSim_statusB);
         _bFill2 = findViewById(R.id.rewardedSim_fill2B);
-        _bFill2.setOnClickListener(v -> SimOnAdLoadedEvent(_adRequestB, true));
+        _bFill2.setOnClickListener(v -> SimOnAdLoadedEvent(_trackB, true));
         _bFill1 = findViewById(R.id.rewardedSim_fill1B);
-        _bFill1.setOnClickListener(v -> SimOnAdLoadedEvent(_adRequestB, false));
+        _bFill1.setOnClickListener(v -> SimOnAdLoadedEvent(_trackB, false));
         _bNoFill = findViewById(R.id.rewardedSim_noFillB);
-        _bNoFill.setOnClickListener(v -> SimOnAdFailedEvent(_adRequestB, 2));
+        _bNoFill.setOnClickListener(v -> SimOnAdFailedEvent(_trackB, 2));
         _bOther = findViewById(R.id.rewardedSim_OtherB);
-        _bOther.setOnClickListener(v -> SimOnAdFailedEvent(_adRequestB, 0));
+        _bOther.setOnClickListener(v -> SimOnAdFailedEvent(_trackB, 0));
         ToggleTrackB(false, true);
     }
 
-    private boolean TryShow(AdRequest request) {
-        request._state = State.Idle;
-        request._revenue = -1;
-
-        if (request._rewarded.isReady()) {
-            request._rewarded.showAd(_activity);
+    private boolean TryShow(Track track) {
+        track._revenue = -1;
+        if (track._rewarded.isReady()) {
+            track._state = State.Shown;
+            track._rewarded.showAd(_activity);
             return true;
         }
-        RetryLoading();
+        track._state = State.Idle;
+        RetryLoadTracks();
         return false;
     }
 
-    public void RetryLoading() {
+    public void RetryLoadTracks() {
         if (_loadSwitch.isChecked()) {
-            StartLoading();
+            LoadTracks();
         }
     }
 
@@ -310,11 +316,11 @@ public class RewardedSim extends TableLayout {
         }
 
         _isFirstResponseReceived = true;
-        RetryLoading();
+        RetryLoadTracks();
     }
 
     private void UpdateShowButton() {
-        _showButton.setEnabled(_adRequestA._state == State.Ready || _adRequestB._state == State.Ready);
+        _showButton.setEnabled(_trackA._state == State.Ready || _trackB._state == State.Ready);
     }
 
     void Log(String log) {
@@ -345,14 +351,18 @@ public class RewardedSim extends TableLayout {
 
         public void setExtraParameter(String key, String value) {
             if ("jC7Fp".equals(key)) {
-                _floor = Double.parseDouble(value);
+                if (value == null || value.isEmpty()) {
+                    _floor = -1;
+                } else {
+                    _floor = Double.parseDouble(value);
+                }
             }
         }
 
         public void loadAd() {
             String status = _adUnitId + " loading " + (_floor >= 0 ? " as Optimized" : "as Default");
 
-            if (_adRequestA._adUnitId.equals(_adUnitId)) {
+            if (_trackA._adUnitId.equals(_adUnitId)) {
                 ToggleTrackA(true, true);
                 _aStatus.setText(status);
             } else {
@@ -364,24 +374,41 @@ public class RewardedSim extends TableLayout {
         public void showAd(Activity activity) {
             _revenueListener.onAdRevenuePaid(_ad);
 
-            SimulatorAd.Instance.Show("Rewarded",
-                    () -> { _listener.onAdDisplayed(_ad); },
-                    () -> { _listener.onAdClicked(_ad); },
-                    () -> { _listener.onUserRewarded(_ad, new MaxReward() {
+            NetworkConfig.Open("Rewarded", activity,
+                    new Callback() {
                         @Override
-                        public String getLabel() {
-                            return "simulated reward";
+                        public void onShow() {
+                            _listener.onAdDisplayed(_ad);
                         }
 
                         @Override
-                        public int getAmount() {
-                            return 1;
+                        public void onClick() {
+                            _listener.onAdClicked(_ad);
                         }
-                    }); },
-                    () -> { _listener.onAdHidden(_ad); }
-            );
 
-            if (_adRequestA._adUnitId.equals(_adUnitId)) {
+                        @Override
+                        public void onReward() {
+                            _listener.onUserRewarded(_ad, new MaxReward() {
+                                @Override
+                                public String getLabel() {
+                                    return "simulated reward";
+                                }
+
+                                @Override
+                                public int getAmount() {
+                                    return 1;
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onClose() {
+                            _listener.onAdHidden(_ad);
+                            _ad = null;
+                        }
+                    });
+
+            if (_trackA._adUnitId.equals(_adUnitId)) {
                 _aStatus.setText("Showing A");
             } else {
                 _bStatus.setText("Showing B");
@@ -405,7 +432,6 @@ public class RewardedSim extends TableLayout {
             return _adUnitId;
         }
     }
-
 
     private void ToggleTrackA(boolean on, boolean refresh) {
         _aFill2.setEnabled(on);
@@ -445,12 +471,12 @@ public class RewardedSim extends TableLayout {
         _bOther.refreshDrawableState();
     }
 
-    private void SimOnAdLoadedEvent(AdRequest request, boolean isHigh) {
+    private void SimOnAdLoadedEvent(Track track, boolean isHigh) {
         double revenue = isHigh ? 0.002 : 0.001;
-        if (request._rewarded._ad != null) {
-            request._rewarded._ad = null;
+        if (track._rewarded._ad != null) {
+            track._rewarded._ad = null;
 
-            if (request == _adRequestA) {
+            if (track == _trackA) {
                 if (isHigh) {
                     _aFill2.setBackgroundResource(R.drawable.button);
                     _aFill2.setEnabled(false);
@@ -469,10 +495,10 @@ public class RewardedSim extends TableLayout {
             }
             return;
         }
-        MaxAd ad = new SMaxAd(request._adUnitId, MaxAdFormat.REWARDED, revenue,
+        MaxAd ad = new SMaxAd(track._adUnitId, MaxAdFormat.REWARDED, revenue,
             new MaxNetworkResponseInfo.AdLoadState[] { MaxNetworkResponseInfo.AdLoadState.AD_LOADED, MaxNetworkResponseInfo.AdLoadState.AD_LOAD_NOT_ATTEMPTED });
 
-        if (request == _adRequestA) {
+        if (track == _trackA) {
             ToggleTrackA(false, false);
             if (isHigh) {
                 _aFill2.setBackgroundResource(R.drawable.button_fill);
@@ -481,7 +507,7 @@ public class RewardedSim extends TableLayout {
                 _aFill1.setBackgroundResource(R.drawable.button_fill);
                 _aFill1.setEnabled(true);
             }
-            _aStatus.setText(request._adUnitId + " loaded " + revenue);
+            _aStatus.setText(track._adUnitId + " loaded " + revenue);
         } else {
             ToggleTrackB(false, false);
             if (isHigh) {
@@ -491,14 +517,14 @@ public class RewardedSim extends TableLayout {
                 _bFill1.setBackgroundResource(R.drawable.button_fill);
                 _bFill1.setEnabled(true);
             }
-            _bStatus.setText(request._adUnitId + " loaded " + revenue);
+            _bStatus.setText(track._adUnitId + " loaded " + revenue);
         }
 
-        request._rewarded.SimLoad(ad);
+        track._rewarded.SimLoad(ad);
     }
 
-    private void SimOnAdFailedEvent(AdRequest request, int status) {
-        if (request == _adRequestA) {
+    private void SimOnAdFailedEvent(Track track, int status) {
+        if (track == _trackA) {
             if (status == 2) {
                 _aNoFill.setBackgroundResource(R.drawable.button_no);
             } else {
@@ -553,6 +579,6 @@ public class RewardedSim extends TableLayout {
                 return null;
             }
         };
-        request._rewarded.SimFailLoad(error);
+        track._rewarded.SimFailLoad(error);
     }
 }
