@@ -157,7 +157,7 @@ public class Rewarded extends TableLayout {
 
     private void LoadTrack(Track track, State otherState) {
         if (track._state == State.Idle) {
-            if (otherState != State.LoadingWithInsights) {
+            if (otherState == State.LoadingWithInsights || otherState == State.Shown) {
                 if (_isFirstResponseReceived) {
                     LoadDefault(track);
                 }
