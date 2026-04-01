@@ -31,7 +31,6 @@ import java.util.Locale;
 public class Interstitial extends TableLayout {
     private final String AdUnitA = "87f1b4837da231e5";
     private final String AdUnitB = "7267e7f4187b95b2";
-    private final int TimeoutInSeconds = 5;
 
     private enum State {
         Idle,
@@ -47,14 +46,25 @@ public class Interstitial extends TableLayout {
         public State _state = State.Idle;
         public AdInsight _insight;
         public double _revenue;
-        public int _consecutiveAdFails;
 
         public Track(String adUnit) {
             _adUnitId = adUnit;
 
+            Reset();
+        }
+
+        public void Reset() {
+            if (_interstitial != null) {
+                _interstitial.destroy();
+            }
+
             _interstitial = new MaxInterstitialAd(_adUnitId);
             _interstitial.setListener(this);
             _interstitial.setRevenueListener(this);
+
+            _state = State.Idle;
+            _insight = null;
+            _revenue = 0;
         }
 
         @Override
@@ -67,7 +77,6 @@ public class Interstitial extends TableLayout {
         }
 
         public void OnLoadFail() {
-            _consecutiveAdFails++;
             RetryLoad();
 
             OnTrackLoad(false);
@@ -80,7 +89,6 @@ public class Interstitial extends TableLayout {
             Log("Loaded  "+ _adUnitId +" at: "+ ad.getRevenue());
 
             _insight = null;
-            _consecutiveAdFails = 0;
             _revenue = ad.getRevenue();
             _state = State.Ready;
 
@@ -88,13 +96,10 @@ public class Interstitial extends TableLayout {
         }
 
         public void RetryLoad() {
-            // As per MAX recommendations, retry with exponentially higher delays up to 64s
-            // In case you would like to customize fill rate / revenue please contact our customer support
-            long waitTimeInMs = new int[]{0, 2, 4, 8, 16, 32, 64}[Math.min(_consecutiveAdFails, 6)] * 1000L;
             _handler.postDelayed(() -> {
                 _state = State.Idle;
                 RetryLoadTracks();
-            }, waitTimeInMs);
+            }, (long)(NeftaMediationAdapter.GetRetryDelayInSeconds(_insight) * 1000));
         }
 
         @Override
@@ -121,7 +126,6 @@ public class Interstitial extends TableLayout {
             Log("onAdHidden "+ ad.getAdUnitId());
 
             _state = State.Idle;
-
             RetryLoadTracks();
         }
 
@@ -129,6 +133,7 @@ public class Interstitial extends TableLayout {
         public void onAdDisplayFailed(@NonNull MaxAd ad, @NonNull MaxError maxError) {
             Log("onAdDisplayFailed "+ ad.getAdUnitId());
 
+            _state = State.Idle;
             RetryLoadTracks();
         }
     }
@@ -180,19 +185,18 @@ public class Interstitial extends TableLayout {
             } else {
                 track.OnLoadFail();
             }
-        }, TimeoutInSeconds);
+        });
     }
 
     private void LoadDefault(Track track) {
         track._state = State.Loading;
-
-        Log("Loading "+ track._adUnitId + " as Default");
 
         track._interstitial.setExtraParameter("disable_auto_retries", "false");
         track._interstitial.setExtraParameter("jC7Fp", "");
 
         NeftaMediationAdapter.OnExternalMediationRequest(track._interstitial);
 
+        Log("Loading "+ track._adUnitId + " as Default");
         track._interstitial.loadAd();
     }
 
@@ -222,13 +226,20 @@ public class Interstitial extends TableLayout {
 
         _trackA = new Track(AdUnitA);
         _trackB = new Track(AdUnitB);
+        NeftaMediationAdapter.AddNewSessionCallback(() -> {
+            Log("Inter on new session");
+            _trackA.Reset();
+            _trackB.Reset();
+
+            UpdateShowButton();
+            _isFirstResponseReceived = false;
+            RetryLoadTracks();
+        });
 
         _loadSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    LoadTracks();
-                }
+                RetryLoadTracks();
             }
         });
         _showButton.setOnClickListener(new View.OnClickListener() {
@@ -249,6 +260,14 @@ public class Interstitial extends TableLayout {
             }
         });
         _showButton.setEnabled(false);
+    }
+
+    @Override
+    protected void onVisibilityChanged(@NonNull View changedView, int visibility) {
+        if (visibility == GONE) {
+            _loadSwitch.setChecked(false);
+        }
+        super.onVisibilityChanged(changedView, visibility);
     }
 
     private boolean TryShow(Track track) {

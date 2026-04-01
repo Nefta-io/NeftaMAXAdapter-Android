@@ -9,6 +9,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.Switch;
 import android.widget.TableLayout;
@@ -27,8 +28,8 @@ import com.applovin.mediation.MaxReward;
 import com.applovin.mediation.MaxRewardedAdListener;
 import com.applovin.mediation.adapters.NeftaMediationAdapter;
 import com.applovin.mediation.ads.MaxRewardedAd;
-import com.nefta.networkconfig.Callback;
-import com.nefta.networkconfig.NetworkConfig;
+import com.nefta.debug.Callback;
+import com.nefta.debug.NDebug;
 import com.nefta.sdk.AdInsight;
 import com.nefta.sdk.Insights;
 import com.nefta.sdk.NeftaPlugin;
@@ -36,7 +37,6 @@ import com.nefta.sdk.NeftaPlugin;
 import java.util.Locale;
 
 public class RewardedSim extends TableLayout {
-    private final int TimeoutInSeconds = 5;
 
     private enum State {
         Idle,
@@ -57,9 +57,21 @@ public class RewardedSim extends TableLayout {
         public Track(String adUnit) {
             _adUnitId = adUnit;
 
+            Reset();
+        }
+
+        public void Reset() {
+            if (_rewarded != null) {
+                _rewarded.destroy();
+            }
+
             _rewarded = new SimRewarded(_adUnitId);
             _rewarded.setListener(this);
             _rewarded.setRevenueListener(this);
+
+            _state = State.Idle;
+            _insight = null;
+            _revenue = 0;
         }
 
         @Override
@@ -93,13 +105,10 @@ public class RewardedSim extends TableLayout {
         }
 
         public void RetryLoad() {
-            // As per MAX recommendations, retry with exponentially higher delays up to 64s
-            // In case you would like to customize fill rate / revenue please contact our customer support
-            long waitTimeInMs = new int[]{0, 2, 4, 8, 16, 32, 64}[Math.min(_consecutiveAdFails, 6)] * 1000L;
             _handler.postDelayed(() -> {
                 _state = State.Idle;
                 RetryLoadTracks();
-            }, waitTimeInMs);
+            }, (long)(NeftaMediationAdapter.GetRetryDelayInSeconds(_insight) * 1000));
         }
 
         @Override
@@ -139,6 +148,7 @@ public class RewardedSim extends TableLayout {
         public void onAdDisplayFailed(@NonNull MaxAd ad, @NonNull MaxError maxError) {
             Log("onAdDisplayFailed "+ ad.getAdUnitId());
 
+            _state = State.Idle;
             RetryLoadTracks();
         }
     }
@@ -202,7 +212,7 @@ public class RewardedSim extends TableLayout {
             } else {
                 track.OnLoadFail();
             }
-        }, TimeoutInSeconds);
+        });
     }
 
     private void LoadDefault(Track track) {
@@ -242,15 +252,20 @@ public class RewardedSim extends TableLayout {
 
         _handler = new Handler(Looper.getMainLooper());
 
-        String adUnitA = "Rewarded Track A";
-        _trackA = new Track(adUnitA);
-        String adUnitB = "Rewarded Track B";
-        _trackB = new Track(adUnitB);
+        _trackA = new Track("Rewarded Track A");
+        _trackB = new Track("Rewarded Track B");
+        NeftaMediationAdapter.AddNewSessionCallback(() -> {
+            Log("Rewarded on new session");
+            _trackA.Reset();
+            _trackB.Reset();
+
+            UpdateShowButton();
+            _isFirstResponseReceived = false;
+            RetryLoadTracks();
+        });
 
         _loadSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isChecked) {
-                LoadTracks();
-            }
+            RetryLoadTracks();
         });
         _showButton.setOnClickListener(view -> {
             boolean isShown = false;
@@ -290,6 +305,14 @@ public class RewardedSim extends TableLayout {
         _bOther = findViewById(R.id.rewardedSim_OtherB);
         _bOther.setOnClickListener(v -> SimOnAdFailedEvent(_trackB, 0));
         ToggleTrackB(false, true);
+    }
+
+    @Override
+    protected void onVisibilityChanged(@NonNull View changedView, int visibility) {
+        if (visibility == GONE) {
+            _loadSwitch.setChecked(false);
+        }
+        super.onVisibilityChanged(changedView, visibility);
     }
 
     private boolean TryShow(Track track) {
@@ -372,23 +395,36 @@ public class RewardedSim extends TableLayout {
         }
 
         public void showAd(Activity activity) {
-            _revenueListener.onAdRevenuePaid(_ad);
+            MaxAd ad = _ad;
+            if (ad == null) {
+                return;
+            }
 
-            NetworkConfig.Open("Rewarded", activity,
+            _ad = null;
+            if (_trackA._adUnitId.equals(_adUnitId)) {
+                ToggleTrackA(false, false);
+                _aStatus.setText("Showing A");
+            } else {
+                ToggleTrackB(false, false);
+                _bStatus.setText("Showing B");
+            }
+
+            NDebug.Open("Rewarded", activity,
                     new Callback() {
                         @Override
                         public void onShow() {
-                            _listener.onAdDisplayed(_ad);
+                            _listener.onAdDisplayed(ad);
+                            _revenueListener.onAdRevenuePaid(ad);
                         }
 
                         @Override
                         public void onClick() {
-                            _listener.onAdClicked(_ad);
+                            _listener.onAdClicked(ad);
                         }
 
                         @Override
                         public void onReward() {
-                            _listener.onUserRewarded(_ad, new MaxReward() {
+                            _listener.onUserRewarded(ad, new MaxReward() {
                                 @Override
                                 public String getLabel() {
                                     return "simulated reward";
@@ -403,16 +439,9 @@ public class RewardedSim extends TableLayout {
 
                         @Override
                         public void onClose() {
-                            _listener.onAdHidden(_ad);
-                            _ad = null;
+                            _listener.onAdHidden(ad);
                         }
                     });
-
-            if (_trackA._adUnitId.equals(_adUnitId)) {
-                _aStatus.setText("Showing A");
-            } else {
-                _bStatus.setText("Showing B");
-            }
         }
 
         public void SimLoad(MaxAd ad) {
@@ -428,8 +457,21 @@ public class RewardedSim extends TableLayout {
             return _ad != null;
         }
 
+
         public String getAdUnitId() {
             return _adUnitId;
+        }
+
+        public void destroy() {
+            _ad = null;
+
+            if (_trackA._adUnitId.equals(_adUnitId)) {
+                ToggleTrackA(false, true);
+                _aStatus.setText("");
+            } else {
+                ToggleTrackB(false, true);
+                _bStatus.setText("");
+            }
         }
     }
 

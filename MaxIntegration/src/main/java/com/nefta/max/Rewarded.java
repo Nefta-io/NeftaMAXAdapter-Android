@@ -22,6 +22,7 @@ import com.applovin.mediation.MaxError;
 import com.applovin.mediation.MaxReward;
 import com.applovin.mediation.MaxRewardedAdListener;
 import com.applovin.mediation.adapters.NeftaMediationAdapter;
+import com.applovin.mediation.ads.MaxInterstitialAd;
 import com.applovin.mediation.ads.MaxRewardedAd;
 import com.nefta.sdk.AdInsight;
 import com.nefta.sdk.Insights;
@@ -53,9 +54,21 @@ public class Rewarded extends TableLayout {
         public Track(String adUnit) {
             _adUnitId = adUnit;
 
+            Reset();
+        }
+
+        public void Reset() {
+            if (_rewarded != null) {
+                _rewarded.destroy();
+            }
+
             _rewarded = MaxRewardedAd.getInstance(_adUnitId);
             _rewarded.setListener(this);
             _rewarded.setRevenueListener(this);
+
+            _state = State.Idle;
+            _insight = null;
+            _revenue = 0;
         }
 
         @Override
@@ -89,13 +102,10 @@ public class Rewarded extends TableLayout {
         }
 
         public void RetryLoad() {
-            // As per MAX recommendations, retry with exponentially higher delays up to 64s
-            // In case you would like to customize fill rate / revenue please contact our customer support
-            long waitTimeInMs = new int[]{0, 2, 4, 8, 16, 32, 64}[Math.min(_consecutiveAdFails, 6)] * 1000L;
             _handler.postDelayed(() -> {
                 _state = State.Idle;
                 RetryLoadTracks();
-            }, waitTimeInMs);
+            }, (long)(NeftaMediationAdapter.GetRetryDelayInSeconds(_insight) * 1000));
         }
 
         @Override
@@ -135,6 +145,7 @@ public class Rewarded extends TableLayout {
         public void onAdDisplayFailed(@NonNull MaxAd ad, @NonNull MaxError maxError) {
             Log("onAdDisplayFailed "+ ad.getAdUnitId());
 
+            _state = State.Idle;
             RetryLoadTracks();
         }
     }
@@ -186,7 +197,7 @@ public class Rewarded extends TableLayout {
             } else {
                 track.OnLoadFail();
             }
-        }, TimeoutInSeconds);
+        });
     }
 
     private void LoadDefault(Track track) {
@@ -220,21 +231,28 @@ public class Rewarded extends TableLayout {
     protected void onFinishInflate() {
         super.onFinishInflate();
 
-        _trackA = new Track(AdUnitA);
-        _trackB = new Track(AdUnitB);
-
         _loadSwitch = findViewById(R.id.rewarded_load);;
         _showButton = findViewById(R.id.rewarded_show);;
         _status = findViewById(R.id.rewarded_status);;
 
         _handler = new Handler(Looper.getMainLooper());
 
+        _trackA = new Track(AdUnitA);
+        _trackB = new Track(AdUnitB);
+        NeftaMediationAdapter.AddNewSessionCallback(() -> {
+            Log("Rewarded on new session");
+            _trackA.Reset();
+            _trackB.Reset();
+
+            UpdateShowButton();
+            _isFirstResponseReceived = false;
+            RetryLoadTracks();
+        });
+
         _loadSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    LoadTracks();
-                }
+                RetryLoadTracks();
             }
         });
         _showButton.setOnClickListener(new View.OnClickListener() {
@@ -255,6 +273,14 @@ public class Rewarded extends TableLayout {
             }
         });
         _showButton.setEnabled(false);
+    }
+
+    @Override
+    protected void onVisibilityChanged(@NonNull View changedView, int visibility) {
+        if (visibility == GONE) {
+            _loadSwitch.setChecked(false);
+        }
+        super.onVisibilityChanged(changedView, visibility);
     }
 
     private boolean TryShow(Track request) {
