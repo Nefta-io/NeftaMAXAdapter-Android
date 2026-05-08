@@ -27,17 +27,51 @@
             <TableRow
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_marginBottom="20dp">
+                android:layout_marginBottom="20dp"
+                android:layout_span="2">
 
                 <TextView
                     android:id="@+id/title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_span="2"
-                    android:text="MAX Integration"
                     android:gravity="center"
+                    android:text="MAX Integration"
                     android:textColor="#000000"
                     android:textSize="24sp" />
+            </TableRow>
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <LinearLayout
+                    android:id="@+id/groupView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_span="2"
+                    android:orientation="vertical">
+
+                    <Button
+                        android:id="@+id/control"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="20dp"
+                        android:text="Control" />
+
+                    <Button
+                        android:id="@+id/optimized"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="20dp"
+                        android:text="Optimized" />
+
+                    <Button
+                        android:id="@+id/simulator"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Simulator" />
+                </LinearLayout>
+
             </TableRow>
 
             <TableRow
@@ -325,11 +359,11 @@
 
             <TableRow>
 
-                <com.nefta.max.Interstitial
+                <com.nefta.max.InterstitialUi
                     android:id="@+id/interstitial"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:visibility="visible">
+                    android:visibility="gone">
 
                     <TableRow android:layout_width="match_parent">
 
@@ -357,17 +391,17 @@
                             android:text="Status"
                             android:textColor="#000000" />
                     </TableRow>
-                </com.nefta.max.Interstitial>
+                </com.nefta.max.InterstitialUi>
             </TableRow>
 
 
             <TableRow>
 
-                <com.nefta.max.Rewarded
+                <com.nefta.max.RewardedUi
                     android:id="@+id/rewarded"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:visibility="visible">
+                    android:visibility="gone">
 
                     <TableRow android:layout_width="match_parent">
 
@@ -396,7 +430,7 @@
                             android:text="Status"
                             android:textColor="#000000" />
                     </TableRow>
-                </com.nefta.max.Rewarded>
+                </com.nefta.max.RewardedUi>
             </TableRow>
         </TableLayout>
 

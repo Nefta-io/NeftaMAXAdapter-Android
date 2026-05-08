@@ -21,15 +21,9 @@ import java.util.Arrays;
 public class MainActivity extends AppCompatActivity {
 
     private String[] _dynamicAdUnits = new String[] {
-        // interstitial
-        "87f1b4837da231e5", // track A
-        "7267e7f4187b95b2", // track B
-        // rewarded
-        "a4b93fe91b278c75", // track A
-        "72458470d47ee781"  // track B
+        Interstitial.AdUnitA, Interstitial.AdUnitA,
+        Rewarded.AdUnitA, Rewarded.AdUnitB
     };
-
-    private boolean _isSimulator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,13 +35,17 @@ public class MainActivity extends AppCompatActivity {
 
         NeftaPlugin.EnableLogging(true);
         NeftaMediationAdapter.InitWithAppId(getApplicationContext(), "5632029345447936", (InitConfiguration config) -> {
-            Log.i("NeftaPluginMAX", "Should skip Nefta optimization: " + config._skipOptimization + " for: " + config._nuid);
+            Log.i("NeftaPluginMAX", "Nefta initialized nuid: " + config._nuid);
         });
+    }
 
+    private void InitializeMAX(boolean isOptimized) {
         AppLovinPrivacySettings.setHasUserConsent(true);
         AppLovinSdk sdk = AppLovinSdk.getInstance(this);
         sdk.getSettings().setVerboseLogging(true);
-        sdk.getSettings().setExtraParameter("disable_b2b_ad_unit_ids", String.join(",", _dynamicAdUnits));
+        if (isOptimized) {
+            sdk.getSettings().setExtraParameter("disable_b2b_ad_unit_ids", String.join(",", _dynamicAdUnits));
+        }
         AppLovinSdkInitializationConfiguration initConfig = AppLovinSdkInitializationConfiguration.builder(BuildConfig.MAX_KEY)
                 .setMediationProvider( AppLovinMediationProvider.MAX )
                 .setTestDeviceAdvertisingIds(Arrays.asList("97ec28e2-e65a-4fac-b11e-3975391f7cb7", "dca773a6-3445-4776-b361-4d950a0e212f"))
@@ -57,22 +55,46 @@ public class MainActivity extends AppCompatActivity {
             public void onSdkInitialized(final AppLovinSdkConfiguration sdkConfig) {
             }
         });
+
+        InterstitialUi interstitialUi = findViewById(R.id.interstitial);
+        RewardedUi rewardedUi = findViewById(R.id.rewarded);
+        if (isOptimized) {
+            interstitialUi.Init(new InterstitialOptimized());
+            rewardedUi.Init(new RewardedOptimized());
+        } else {
+            interstitialUi.Init(new InterstitialDefault());
+            rewardedUi.Init(new RewardedDefault());
+        }
     }
 
     private void InitUI() {
         TextView title = findViewById(R.id.title);
         title.setText("MAX Integration "+ AppLovinSdk.VERSION);
-        title.setOnClickListener(v -> ToggleUI(!_isSimulator));
-        ToggleUI(BuildConfig.IS_SIMULATOR);
-    }
 
-    private void ToggleUI(boolean isSimulator) {
-        _isSimulator = isSimulator;
+        findViewById(R.id.control).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                findViewById(R.id.groupView).setVisibility(View.GONE);
 
-        findViewById(R.id.interstitialSim).setVisibility(_isSimulator ? View.VISIBLE : View.GONE);
-        findViewById(R.id.rewardedSim).setVisibility(_isSimulator ? View.VISIBLE : View.GONE);
+                InitializeMAX(false);
+            }
+        });
+        findViewById(R.id.optimized).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                findViewById(R.id.groupView).setVisibility(View.GONE);
 
-        findViewById(R.id.interstitial).setVisibility(_isSimulator ? View.GONE : View.VISIBLE);
-        findViewById(R.id.rewarded).setVisibility(_isSimulator ? View.GONE : View.VISIBLE);
+                InitializeMAX(true);
+            }
+        });
+        findViewById(R.id.simulator).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                findViewById(R.id.groupView).setVisibility(View.GONE);
+
+                findViewById(R.id.interstitialSim).setVisibility(View.VISIBLE);
+                findViewById(R.id.rewardedSim).setVisibility(View.VISIBLE);
+            }
+        });
     }
 }
