@@ -1,20 +1,9 @@
 package com.nefta.max;
 
-import android.app.Activity;
-import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.AttributeSet;
-import android.util.Log;
-import android.view.View;
-import android.widget.Button;
-import android.widget.CompoundButton;
-import android.widget.Switch;
-import android.widget.TableLayout;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.applovin.mediation.MaxAd;
 import com.applovin.mediation.MaxAdRevenueListener;
@@ -45,26 +34,13 @@ public class RewardedOptimized implements Rewarded {
         public State _state = State.Idle;
         public AdInsight _insight;
         public double _revenue;
-        public int _consecutiveAdFails;
 
         public Track(String adUnit) {
             _adUnitId = adUnit;
 
-            Reset();
-        }
-
-        public void Reset() {
-            if (_rewarded != null) {
-                _rewarded.destroy();
-            }
-
             _rewarded = MaxRewardedAd.getInstance(_adUnitId);
             _rewarded.setListener(this);
             _rewarded.setRevenueListener(this);
-
-            _state = State.Idle;
-            _insight = null;
-            _revenue = 0;
         }
 
         @Override
@@ -77,7 +53,6 @@ public class RewardedOptimized implements Rewarded {
         }
 
         public void OnLoadFail() {
-            _consecutiveAdFails++;
             RetryLoad();
 
             OnTrackLoad(false);
@@ -90,7 +65,6 @@ public class RewardedOptimized implements Rewarded {
             Log("Loaded  "+ _adUnitId +" at: "+ ad.getRevenue());
 
             _insight = null;
-            _consecutiveAdFails = 0;
             _revenue = ad.getRevenue();
             _state = State.Ready;
 
@@ -100,8 +74,8 @@ public class RewardedOptimized implements Rewarded {
         public void RetryLoad() {
             _handler.postDelayed(() -> {
                 _state = State.Idle;
-                RetryLoadTracks();
-            }, (long)(NeftaMediationAdapter.GetRetryDelayInSeconds(_insight) * 1000));
+                Load();
+            }, (long)(NeftaMediationAdapter.GetRetryDelayInSeconds(_insight, _adUnitId) * 1000));
         }
 
         @Override
@@ -120,7 +94,7 @@ public class RewardedOptimized implements Rewarded {
         public void onAdClicked(@NonNull MaxAd ad) {
             NeftaMediationAdapter.OnExternalMediationClick(ad);
 
-            Log( "onAdClicked "+ ad.getAdUnitId());
+            Log("onAdClicked "+ ad.getAdUnitId());
         }
 
         @Override
@@ -134,7 +108,7 @@ public class RewardedOptimized implements Rewarded {
 
             _state = State.Idle;
 
-            RetryLoadTracks();
+            Load();
         }
 
         @Override
@@ -142,7 +116,7 @@ public class RewardedOptimized implements Rewarded {
             Log("onAdDisplayFailed "+ ad.getAdUnitId());
 
             _state = State.Idle;
-            RetryLoadTracks();
+            Load();
         }
     }
 
@@ -159,18 +133,13 @@ public class RewardedOptimized implements Rewarded {
 
         _trackA = new Track(Rewarded.AdUnitA);
         _trackB = new Track(Rewarded.AdUnitB);
-        NeftaMediationAdapter.AddNewSessionCallback(() -> {
-            Log("Rewarded on new session");
-            _trackA.Reset();
-            _trackB.Reset();
-
-            UpdateAvailability();
-            _isFirstResponseReceived = false;
-            RetryLoadTracks();
-        });
     }
 
     public void Load() {
+        if (!_ui.IsAutoLoad) {
+            return;
+        }
+
         LoadTrack(_trackA, _trackB._state);
         LoadTrack(_trackB, _trackA._state);
     }
@@ -249,14 +218,8 @@ public class RewardedOptimized implements Rewarded {
             return true;
         }
         request._state = State.Idle;
-        RetryLoadTracks();
+        Load();
         return false;
-    }
-
-    public void RetryLoadTracks() {
-        if (_ui.IsAutoLoad) {
-            Load();
-        }
     }
 
     public void OnTrackLoad(boolean success) {
@@ -265,14 +228,14 @@ public class RewardedOptimized implements Rewarded {
         }
 
         _isFirstResponseReceived = true;
-        RetryLoadTracks();
+        Load();
     }
 
     private void UpdateAvailability() {
         _ui.SetAvailability(_trackA._state == State.Ready || _trackB._state == State.Ready);
     }
 
-    void Log(String log) {
+    private void Log(String log) {
         _ui.Log(log);
     }
 }

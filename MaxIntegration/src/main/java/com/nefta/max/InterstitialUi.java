@@ -73,9 +73,9 @@ public class InterstitialUi extends TableLayout {
         _showButton.setEnabled(isAvailable);
     }
 
-    void Log(String log) {
+    public void Log(String log) {
         _status.setText(log);
-        Log.i("InterstitialDefault", "Interstitial " + log);
+        Log.i("Interstitial", "Interstitial " + log);
     }
 }
 

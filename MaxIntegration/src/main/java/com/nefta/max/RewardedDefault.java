@@ -38,9 +38,7 @@ public class RewardedDefault implements MaxRewardedAdListener, MaxAdRevenueListe
         _consecutiveAdFails++;
         long waitTimeInMs = new int[]{0, 2, 4, 8, 16, 32, 64}[Math.min(_consecutiveAdFails, 6)] * 1000L;
         _handler.postDelayed(() -> {
-            if (_ui.IsAutoLoad) {
-                Load();
-            }
+            Load();
         }, waitTimeInMs);
     }
 
@@ -83,21 +81,21 @@ public class RewardedDefault implements MaxRewardedAdListener, MaxAdRevenueListe
     public void onAdHidden(@NonNull MaxAd ad) {
         Log("onAdHidden "+ ad.getAdUnitId());
 
-        if (_ui.IsAutoLoad) {
-            Load();
-        }
+        Load();
     }
 
     @Override
     public void onAdDisplayFailed(@NonNull MaxAd ad, @NonNull MaxError maxError) {
         Log("onAdDisplayFailed "+ ad.getAdUnitId());
 
-        if (_ui.IsAutoLoad) {
-            Load();
-        }
+        Load();
     }
 
     public void Load() {
+        if (!_ui.IsAutoLoad) {
+            return;
+        }
+
         NeftaMediationAdapter.OnExternalMediationRequest(_rewarded);
         _rewarded.loadAd();
     }
@@ -105,7 +103,7 @@ public class RewardedDefault implements MaxRewardedAdListener, MaxAdRevenueListe
     public void Show() {
         if (_rewarded.isReady()) {
             _rewarded.showAd(_ui.Activity);
-        } else if (_ui.IsAutoLoad) {
+        } else {
             Load();
         }
 

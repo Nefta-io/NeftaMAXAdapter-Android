@@ -1,8 +1,8 @@
 package com.nefta.max;
 
 public interface Interstitial {
-    String AdUnitA = "87f1b4837da231e5";
-    String AdUnitB = "7267e7f4187b95b2";
+    String AdUnitA = "0u6jgm23ggqso85n";
+    String AdUnitB = "wrzl86if1sqfxquc";
 
     public void Init(InterstitialUi ui);
     public void Load();

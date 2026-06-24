@@ -57,21 +57,9 @@ public class RewardedSim extends TableLayout {
         public Track(String adUnit) {
             _adUnitId = adUnit;
 
-            Reset();
-        }
-
-        public void Reset() {
-            if (_rewarded != null) {
-                _rewarded.destroy();
-            }
-
             _rewarded = new SimRewarded(_adUnitId);
             _rewarded.setListener(this);
             _rewarded.setRevenueListener(this);
-
-            _state = State.Idle;
-            _insight = null;
-            _revenue = 0;
         }
 
         @Override
@@ -108,7 +96,7 @@ public class RewardedSim extends TableLayout {
             _handler.postDelayed(() -> {
                 _state = State.Idle;
                 RetryLoadTracks();
-            }, (long)(NeftaMediationAdapter.GetRetryDelayInSeconds(_insight) * 1000));
+            }, (long)(NeftaMediationAdapter.GetRetryDelayInSeconds(_insight, _adUnitId) * 1000));
         }
 
         @Override
@@ -254,15 +242,6 @@ public class RewardedSim extends TableLayout {
 
         _trackA = new Track("Rewarded Track A");
         _trackB = new Track("Rewarded Track B");
-        NeftaMediationAdapter.AddNewSessionCallback(() -> {
-            Log("Rewarded on new session");
-            _trackA.Reset();
-            _trackB.Reset();
-
-            UpdateShowButton();
-            _isFirstResponseReceived = false;
-            RetryLoadTracks();
-        });
 
         _loadSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             RetryLoadTracks();

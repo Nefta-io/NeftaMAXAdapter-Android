@@ -56,21 +56,9 @@ public class InterstitialSim extends TableLayout {
         public Track(String adUnit) {
             _adUnitId = adUnit;
 
-            Reset();
-        }
-
-        public void Reset() {
-            if (_interstitial != null) {
-                _interstitial.destroy();
-            }
-
             _interstitial = new SimInterstitial(_adUnitId);
             _interstitial.setListener(this);
             _interstitial.setRevenueListener(this);
-
-            _state = State.Idle;
-            _insight = null;
-            _revenue = 0;
         }
 
         @Override
@@ -107,7 +95,7 @@ public class InterstitialSim extends TableLayout {
             _handler.postDelayed(() -> {
                 _state = State.Idle;
                 RetryLoadTracks();
-            }, (long)(NeftaMediationAdapter.GetRetryDelayInSeconds(_insight) * 1000));
+            }, (long)(NeftaMediationAdapter.GetRetryDelayInSeconds(_insight, _adUnitId) * 1000));
         }
 
         @Override
@@ -247,15 +235,6 @@ public class InterstitialSim extends TableLayout {
 
         _trackA = new Track("Inter Track A");
         _trackB = new Track("Inter Track B");
-        NeftaMediationAdapter.AddNewSessionCallback(() -> {
-            Log("Inter on new session");
-            _trackA.Reset();
-            _trackB.Reset();
-
-            UpdateShowButton();
-            _isFirstResponseReceived = false;
-            RetryLoadTracks();
-        });
 
         _loadSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             RetryLoadTracks();

@@ -73,8 +73,8 @@ public class RewardedUi extends TableLayout {
         _showButton.setEnabled(isAvailable);
     }
 
-    void Log(String log) {
+    public void Log(String log) {
         _status.setText(log);
-        Log.i("RewardedDefault", "Rewarded " + log);
+        Log.i("Rewarded", "Rewarded " + log);
     }
 }

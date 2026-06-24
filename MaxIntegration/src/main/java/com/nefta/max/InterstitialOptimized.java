@@ -1,11 +1,7 @@
 package com.nefta.max;
 
-import android.app.Activity;
 import android.os.Handler;
 import android.os.Looper;
-import android.widget.Button;
-import android.widget.Switch;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
@@ -41,21 +37,9 @@ public class InterstitialOptimized implements Interstitial {
         public Track(String adUnit) {
             _adUnitId = adUnit;
 
-            Reset();
-        }
-
-        public void Reset() {
-            if (_interstitial != null) {
-                _interstitial.destroy();
-            }
-
             _interstitial = new MaxInterstitialAd(_adUnitId);
             _interstitial.setListener(this);
             _interstitial.setRevenueListener(this);
-
-            _state = State.Idle;
-            _insight = null;
-            _revenue = 0;
         }
 
         @Override
@@ -89,8 +73,8 @@ public class InterstitialOptimized implements Interstitial {
         public void RetryLoad() {
             _handler.postDelayed(() -> {
                 _state = State.Idle;
-                RetryLoadTracks();
-            }, (long)(NeftaMediationAdapter.GetRetryDelayInSeconds(_insight) * 1000));
+                Load();
+            }, (long)(NeftaMediationAdapter.GetRetryDelayInSeconds(_insight, _adUnitId) * 1000));
         }
 
         @Override
@@ -117,7 +101,7 @@ public class InterstitialOptimized implements Interstitial {
             Log("onAdHidden "+ ad.getAdUnitId());
 
             _state = State.Idle;
-            RetryLoadTracks();
+            Load();
         }
 
         @Override
@@ -125,18 +109,13 @@ public class InterstitialOptimized implements Interstitial {
             Log("onAdDisplayFailed "+ ad.getAdUnitId());
 
             _state = State.Idle;
-            RetryLoadTracks();
+            Load();
         }
     }
 
     private Track _trackA;
     private Track _trackB;
     private boolean _isFirstResponseReceived = false;
-
-    private Activity _activity;
-    private Switch _loadSwitch;
-    private Button _showButton;
-    private TextView _status;
 
     private InterstitialUi _ui;
     private Handler _handler;
@@ -147,18 +126,13 @@ public class InterstitialOptimized implements Interstitial {
 
         _trackA = new Track(Interstitial.AdUnitA);
         _trackB = new Track(Interstitial.AdUnitB);
-        NeftaMediationAdapter.AddNewSessionCallback(() -> {
-            Log("Inter on new session");
-            _trackA.Reset();
-            _trackB.Reset();
-
-            UpdateAvailability();
-            _isFirstResponseReceived = false;
-            RetryLoadTracks();
-        });
     }
 
     public void Load() {
+        if (!_ui.IsAutoLoad) {
+            return;
+        }
+
         LoadTrack(_trackA, _trackB._state);
         LoadTrack(_trackB, _trackA._state);
     }
@@ -236,14 +210,8 @@ public class InterstitialOptimized implements Interstitial {
             return true;
         }
         track._state = State.Idle;
-        RetryLoadTracks();
+        Load();
         return false;
-    }
-
-    public void RetryLoadTracks() {
-        if (_loadSwitch.isChecked()) {
-            Load();
-        }
     }
 
     public void OnTrackLoad(boolean success) {
@@ -252,7 +220,7 @@ public class InterstitialOptimized implements Interstitial {
         }
 
         _isFirstResponseReceived = true;
-        RetryLoadTracks();
+        Load();
     }
 
     private void UpdateAvailability() {
