@@ -152,7 +152,7 @@ public class InterstitialOptimized implements Interstitial {
     private void GetInsightsAndLoad(Track track) {
         track._state = State.LoadingWithInsights;
 
-        NeftaPlugin._instance.GetInsights(Insights.INTERSTITIAL, track._insight, (Insights insights) -> {
+        NeftaMediationAdapter.GetInsights(Insights.INTERSTITIAL, track._insight, (Insights insights) -> {
             Log("LoadWithInsights: " + insights);
             if (insights._interstitial != null) {
                 track._insight = insights._insight;

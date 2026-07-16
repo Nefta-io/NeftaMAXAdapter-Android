@@ -159,7 +159,7 @@ public class RewardedOptimized implements Rewarded {
     private void GetInsightsAndLoad(Track track) {
         track._state = State.LoadingWithInsights;
 
-        NeftaPlugin._instance.GetInsights(Insights.REWARDED, track._insight, (Insights insights) -> {
+        NeftaMediationAdapter.GetInsights(Insights.REWARDED, track._insight, (Insights insights) -> {
             Log("LoadWithInsights: " + insights);
             if (insights._rewarded != null) {
                 track._insight = insights._insight;

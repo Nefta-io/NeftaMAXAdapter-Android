@@ -163,13 +163,26 @@ public class RewardedSim extends TableLayout {
     private Button _bOther;
 
     private Handler _handler;
+    private boolean _isOptimized;
 
-    private void LoadTracks() {
-        LoadTrack(_trackA, _trackB._state);
-        LoadTrack(_trackB, _trackA._state);
+    public void SetOptimized(boolean isOptimized) {
+        _isOptimized = isOptimized;
+        NeftaPlugin.SetRewardedLogic(_isOptimized);
+        setVisibility(View.VISIBLE);
     }
 
-    private void LoadTrack(Track track, State otherState) {
+    private void LoadTracks() {
+        if (_isOptimized) {
+            Load(_trackA, _trackB._state);
+            Load(_trackB, _trackA._state);
+        } else {
+            if (_trackA._state == State.Idle) {
+                LoadDefault(_trackA);
+            }
+        }
+    }
+
+    private void Load(Track track, State otherState) {
         if (track._state == State.Idle) {
             if (otherState == State.LoadingWithInsights || otherState == State.Shown) {
                 if (_isFirstResponseReceived) {

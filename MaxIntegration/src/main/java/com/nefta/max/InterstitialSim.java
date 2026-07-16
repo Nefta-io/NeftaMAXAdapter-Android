@@ -24,15 +24,21 @@ import com.applovin.mediation.MaxAdListener;
 import com.applovin.mediation.MaxAdRevenueListener;
 import com.applovin.mediation.MaxAdWaterfallInfo;
 import com.applovin.mediation.MaxError;
+import com.applovin.mediation.MaxMediatedNetworkInfo;
 import com.applovin.mediation.MaxNetworkResponseInfo;
 import com.applovin.mediation.adapters.NeftaMediationAdapter;
 import com.applovin.mediation.ads.MaxInterstitialAd;
+import com.applovin.sdk.AppLovinSdkSettings;
 import com.nefta.debug.Callback;
 import com.nefta.debug.NDebug;
 import com.nefta.sdk.AdInsight;
 import com.nefta.sdk.Insights;
 import com.nefta.sdk.NeftaPlugin;
 
+import org.json.JSONArray;
+
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 
 public class InterstitialSim extends TableLayout {
@@ -156,10 +162,37 @@ public class InterstitialSim extends TableLayout {
     private Button _bOther;
 
     private Handler _handler;
+    private boolean _isOptimized;
+
+    public void SetOptimized(boolean isOptimized) {
+        _isOptimized = isOptimized;
+        NeftaPlugin.SetInterstitialLogic(_isOptimized);
+        setVisibility(View.VISIBLE);
+
+        if (NeftaPlugin._instance._state._isDebugEnabled) {
+            NeftaPlugin._extraParams.put("max_test_mode", true);
+            HashMap<String, String> extra = new HashMap<String, String>();
+            extra.put("disable_b2b_ad_unit_ids","e5dc3548d4a0913f,6d318f954e2630a8,e0b0d20088d60ec5,918acf84edf9c034");
+            NeftaPlugin._extraParams.put("max_extra", extra);
+        }
+        NeftaPlugin._instance._state._adProviderCountry = "SIM";
+
+        if (isOptimized) {
+            JSONArray networks = new JSONArray();
+            networks.put("simulator");
+            NeftaPlugin._instance._state._availableNetworks = networks;
+        }
+    }
 
     private void LoadTracks() {
-        Load(_trackA, _trackB._state);
-        Load(_trackB, _trackA._state);
+        if (_isOptimized) {
+            Load(_trackA, _trackB._state);
+            Load(_trackB, _trackA._state);
+        } else {
+            if (_trackA._state == State.Idle) {
+                LoadDefault(_trackA);
+            }
+        }
     }
 
     private void Load(Track track, State otherState) {

@@ -93,33 +93,30 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.control).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                findViewById(R.id.groupView).setVisibility(View.GONE);
-
-                InitializeNefta();
-                InitializeMAX(false);
+                Initialize(false);
             }
         });
         findViewById(R.id.optimized).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                findViewById(R.id.groupView).setVisibility(View.GONE);
-
-                InitializeNefta();
-                InitializeMAX(true);
+                Initialize(true);
             }
         });
-        findViewById(R.id.simulator).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                InitializeNefta();
+    }
 
-                findViewById(R.id.groupView).setVisibility(View.GONE);
+    private void Initialize(boolean isOptimized) {
+        InitializeNefta();
 
-                NeftaPlugin.SetInterstitialLogic(true);
-                findViewById(R.id.interstitialSim).setVisibility(View.VISIBLE);
-                NeftaPlugin.SetRewardedLogic(true);
-                findViewById(R.id.rewardedSim).setVisibility(View.VISIBLE);
-            }
-        });
+        findViewById(R.id.groupView).setVisibility(View.GONE);
+        boolean isSimulator = ((CheckBox)findViewById(R.id.isSimulator)).isChecked();
+        if (isSimulator) {
+            ((InterstitialSim)findViewById(R.id.interstitialSim)).SetOptimized(isOptimized);
+            ((RewardedSim)findViewById(R.id.rewardedSim)).SetOptimized(isOptimized);
+
+            findViewById(R.id.interstitial).setVisibility(View.GONE);
+            findViewById(R.id.rewarded).setVisibility(View.GONE);
+        } else {
+            InitializeMAX(isOptimized);
+        }
     }
 }
