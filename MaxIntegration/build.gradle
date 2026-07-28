@@ -6,8 +6,8 @@ android {
         applicationId "com.nefta.max"
         minSdkVersion 24
         targetSdkVersion 34
-        versionCode 374
-        versionName "4.6.2.374"
+        versionCode 375
+        versionName "4.6.4.375"
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
