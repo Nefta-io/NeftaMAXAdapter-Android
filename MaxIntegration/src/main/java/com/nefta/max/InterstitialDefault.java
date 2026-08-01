@@ -49,7 +49,7 @@ public class InterstitialDefault implements MaxAdListener, MaxAdRevenueListener,
 
         _consecutiveAdFails = 0;
 
-        _ui.SetAvailability(true);
+        _ui.SetAdAvailability(true);
     }
 
     @Override
@@ -101,7 +101,7 @@ public class InterstitialDefault implements MaxAdListener, MaxAdRevenueListener,
             Load();
         }
 
-        _ui.SetAvailability(false);
+        _ui.SetAdAvailability(false);
     }
 
     void Log(String log) {

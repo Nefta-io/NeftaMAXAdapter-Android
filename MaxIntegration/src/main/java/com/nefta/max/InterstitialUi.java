@@ -15,6 +15,7 @@ import androidx.annotation.Nullable;
 
 public class InterstitialUi extends TableLayout {
 
+    private Switch _loadSwitch;
     private Button _showButton;
     private TextView _status;
 
@@ -48,12 +49,12 @@ public class InterstitialUi extends TableLayout {
     protected void onFinishInflate() {
         super.onFinishInflate();
 
-        Switch loadSwitch = findViewById(R.id.interstitial_load);
+        _loadSwitch = findViewById(R.id.interstitial_load);
         _showButton = findViewById(R.id.interstitial_show);
         _showButton.setEnabled(false);
         _status = findViewById(R.id.interstitial_status);
 
-        loadSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        _loadSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 IsAutoLoad = isChecked;
@@ -69,7 +70,11 @@ public class InterstitialUi extends TableLayout {
         });
     }
 
-    public void SetAvailability(boolean isAvailable) {
+    public void OnAdLogicReady() {
+        _loadSwitch.setEnabled(true);
+    }
+
+    public void SetAdAvailability(boolean isAvailable) {
         _showButton.setEnabled(isAvailable);
     }
 

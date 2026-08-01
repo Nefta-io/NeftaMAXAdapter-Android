@@ -95,6 +95,7 @@
                         <Switch
                             android:id="@+id/interstitialSim_load"
                             android:layout_span="2"
+                            android:enabled="false"
                             android:text="Load Interstitial" />
 
                         <Button
@@ -236,6 +237,7 @@
                         <Switch
                             android:id="@+id/rewardedSim_load"
                             android:layout_span="2"
+                            android:enabled="false"
                             android:text="Load Rewarded" />
 
                         <Button
@@ -374,6 +376,7 @@
 
                         <Switch
                             android:id="@+id/interstitial_load"
+                            android:enabled="false"
                             android:text="Load Interstitial" />
 
                         <Button
@@ -412,6 +415,7 @@
 
                         <Switch
                             android:id="@+id/rewarded_load"
+                            android:enabled="false"
                             android:text="Load Rewarded" />
 
                         <Button

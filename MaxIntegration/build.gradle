@@ -1,17 +1,17 @@
 apply plugin: 'com.android.application'
 android {
-    namespace "com.nefta.max"
+    namespace = "com.nefta.max"
     compileSdkVersion 34
     defaultConfig {
         applicationId "com.nefta.max"
         minSdkVersion 24
-        targetSdkVersion 34
-        versionCode 375
-        versionName "4.6.4.375"
-        multiDexEnabled true
+        targetSdk 36
+        versionCode 383
+        versionName "4.6.6.383"
+        multiDexEnabled = true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
-        android.buildFeatures.buildConfig true
+        android.buildFeatures.buildConfig = true
         def localProperties = new Properties()
         def localPropertiesFile = rootProject.file('local.properties')
         if (localPropertiesFile.exists()) {

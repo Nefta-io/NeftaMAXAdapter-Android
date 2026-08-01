@@ -184,6 +184,10 @@ public class InterstitialSim extends TableLayout {
         }
     }
 
+    public void OnAdLogicReady() {
+        _loadSwitch.setEnabled(true);
+    }
+
     private void LoadTracks() {
         if (_isOptimized) {
             Load(_trackA, _trackB._state);

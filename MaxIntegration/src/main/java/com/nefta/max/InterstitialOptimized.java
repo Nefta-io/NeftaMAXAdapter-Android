@@ -13,7 +13,6 @@ import com.applovin.mediation.adapters.NeftaMediationAdapter;
 import com.applovin.mediation.ads.MaxInterstitialAd;
 import com.nefta.sdk.AdInsight;
 import com.nefta.sdk.Insights;
-import com.nefta.sdk.NeftaPlugin;
 
 import java.util.Locale;
 
@@ -224,7 +223,7 @@ public class InterstitialOptimized implements Interstitial {
     }
 
     private void UpdateAvailability() {
-        _ui.SetAvailability(_trackA._state == State.Ready || _trackB._state == State.Ready);
+        _ui.SetAdAvailability(_trackA._state == State.Ready || _trackB._state == State.Ready);
     }
 
     void Log(String log) {

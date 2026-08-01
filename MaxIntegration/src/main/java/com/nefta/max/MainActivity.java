@@ -27,6 +27,13 @@ public class MainActivity extends AppCompatActivity {
     };
 
     private CheckBox _consentCheckBox;
+    private InterstitialUi _interstitialUi;
+    private RewardedUi _rewardedUi;
+    private InterstitialSim _interstitialSim;
+    private RewardedSim _rewardedSim;
+
+    private boolean _isMaxReady;
+    private boolean _isNeftaReady;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,13 +42,24 @@ public class MainActivity extends AppCompatActivity {
 
         InitUI();
         DebugServer.Init(this, getIntent());
+    }
 
+    private void OnAdLogicReady() {
+        if (_isMaxReady & _isNeftaReady) {
+            _interstitialUi.OnAdLogicReady();
+            _rewardedUi.OnAdLogicReady();
+
+            _interstitialSim.OnAdLogicReady();
+            _rewardedSim.OnAdLogicReady();
+        }
     }
 
     private void InitializeNefta() {
         NeftaPlugin.EnableLogging(true);
         NeftaMediationAdapter.InitWithAppId(getApplicationContext(), "5632029345447936", (InitConfiguration config) -> {
             Log.i("NeftaPluginMAX", "Nefta initialized nuid: " + config._nuid);
+            _isNeftaReady = true;
+            OnAdLogicReady();
         });
     }
 
@@ -63,17 +81,17 @@ public class MainActivity extends AppCompatActivity {
         sdk.initialize( initConfig, new AppLovinSdk.SdkInitializationListener() {
             @Override
             public void onSdkInitialized(final AppLovinSdkConfiguration sdkConfig) {
+                _isMaxReady = true;
+                OnAdLogicReady();
             }
         });
 
-        InterstitialUi interstitialUi = findViewById(R.id.interstitial);
-        RewardedUi rewardedUi = findViewById(R.id.rewarded);
         if (isOptimized) {
-            interstitialUi.Init(new InterstitialOptimized());
-            rewardedUi.Init(new RewardedOptimized());
+            _interstitialUi.Init(new InterstitialOptimized());
+            _rewardedUi.Init(new RewardedOptimized());
         } else {
-            interstitialUi.Init(new InterstitialDefault());
-            rewardedUi.Init(new RewardedDefault());
+            _interstitialUi.Init(new InterstitialDefault());
+            _rewardedUi.Init(new RewardedDefault());
         }
     }
 
@@ -102,6 +120,12 @@ public class MainActivity extends AppCompatActivity {
                 Initialize(true);
             }
         });
+
+        _interstitialUi = findViewById(R.id.interstitial);
+        _rewardedUi = findViewById(R.id.rewarded);
+
+        _interstitialSim = findViewById(R.id.interstitialSim);
+        _rewardedSim = findViewById(R.id.rewardedSim);
     }
 
     private void Initialize(boolean isOptimized) {
@@ -110,11 +134,10 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.groupView).setVisibility(View.GONE);
         boolean isSimulator = ((CheckBox)findViewById(R.id.isSimulator)).isChecked();
         if (isSimulator) {
-            ((InterstitialSim)findViewById(R.id.interstitialSim)).SetOptimized(isOptimized);
-            ((RewardedSim)findViewById(R.id.rewardedSim)).SetOptimized(isOptimized);
+            _isMaxReady = true;
 
-            findViewById(R.id.interstitial).setVisibility(View.GONE);
-            findViewById(R.id.rewarded).setVisibility(View.GONE);
+            _interstitialSim.SetOptimized(isOptimized);
+            _rewardedSim.SetOptimized(isOptimized);
         } else {
             InitializeMAX(isOptimized);
         }

@@ -15,6 +15,7 @@ import androidx.annotation.Nullable;
 
 public class RewardedUi extends TableLayout {
 
+    private Switch _loadSwitch;
     private Button _showButton;
     private TextView _status;
 
@@ -48,12 +49,12 @@ public class RewardedUi extends TableLayout {
     protected void onFinishInflate() {
         super.onFinishInflate();
 
-        Switch loadSwitch = findViewById(R.id.rewarded_load);
+        _loadSwitch = findViewById(R.id.rewarded_load);
         _showButton = findViewById(R.id.rewarded_show);
         _showButton.setEnabled(false);
         _status = findViewById(R.id.rewarded_status);
 
-        loadSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        _loadSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 IsAutoLoad = isChecked;
@@ -67,6 +68,10 @@ public class RewardedUi extends TableLayout {
                 _logic.Show();
             }
         });
+    }
+
+    public void OnAdLogicReady() {
+        _loadSwitch.setEnabled(true);
     }
 
     public void SetAvailability(boolean isAvailable) {

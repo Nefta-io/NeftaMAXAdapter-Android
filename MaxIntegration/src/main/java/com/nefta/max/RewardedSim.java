@@ -299,6 +299,10 @@ public class RewardedSim extends TableLayout {
         ToggleTrackB(false, true);
     }
 
+    public void OnAdLogicReady() {
+        _loadSwitch.setEnabled(true);
+    }
+
     @Override
     protected void onVisibilityChanged(@NonNull View changedView, int visibility) {
         if (visibility == GONE) {
