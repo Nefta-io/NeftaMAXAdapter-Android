@@ -4,7 +4,7 @@ android {
     compileSdkVersion 34
     defaultConfig {
         applicationId "com.nefta.max"
-        minSdkVersion 24
+        minSdkVersion 23
         targetSdk 36
         versionCode 383
         versionName "4.6.6.383"

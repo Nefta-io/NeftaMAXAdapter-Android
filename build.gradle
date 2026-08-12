@@ -3,6 +3,7 @@ buildscript {
         google()
         jcenter()
         maven { url 'https://artifacts.applovin.com/android' }
+        maven { url 'https://maven.nefta.app/android-sdk' }
 
     }
     dependencies {
