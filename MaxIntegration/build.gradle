@@ -4,10 +4,10 @@ android {
     compileSdkVersion 34
     defaultConfig {
         applicationId "com.nefta.max"
-        minSdkVersion 23
+        minSdkVersion 24
         targetSdk 36
-        versionCode 383
-        versionName "4.6.6.383"
+        versionCode 388
+        versionName "4.6.8.388"
         multiDexEnabled = true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
