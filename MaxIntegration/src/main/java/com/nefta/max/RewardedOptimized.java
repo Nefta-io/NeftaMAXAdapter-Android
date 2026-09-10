@@ -122,6 +122,7 @@ public class RewardedOptimized implements Rewarded {
 
     private Track _trackA;
     private Track _trackB;
+    private boolean _isFirstRequest = true;
     private boolean _isFirstResponseReceived = false;
 
     private RewardedUi _ui;
@@ -142,6 +143,18 @@ public class RewardedOptimized implements Rewarded {
 
         LoadTrack(_trackA, _trackB._state);
         LoadTrack(_trackB, _trackA._state);
+
+        int stopWaitingForFirstResponseAfter = NeftaPlugin._instance._state._firstResponseTimeoutRewardedInMs;
+        if (_isFirstRequest && stopWaitingForFirstResponseAfter > 0) {
+            _isFirstRequest = false;
+
+            _handler.postDelayed(() -> {
+                if (!_isFirstResponseReceived) {
+                    _isFirstResponseReceived = true;
+                    Load();
+                }
+            }, stopWaitingForFirstResponseAfter);
+        }
     }
 
     private void LoadTrack(Track track, State otherState) {

@@ -143,6 +143,7 @@ public class RewardedSim extends TableLayout {
 
     private Track _trackA;
     private Track _trackB;
+    private boolean _isFirstRequest = true;
     private boolean _isFirstResponseReceived = false;
 
     private Activity _activity;
@@ -175,6 +176,18 @@ public class RewardedSim extends TableLayout {
         if (_isOptimized) {
             Load(_trackA, _trackB._state);
             Load(_trackB, _trackA._state);
+
+            int stopWaitingForFirstResponseAfter = NeftaPlugin._instance._state._firstResponseTimeoutRewardedInMs;
+            if (_isFirstRequest && stopWaitingForFirstResponseAfter > 0) {
+                _isFirstRequest = false;
+
+                _handler.postDelayed(() -> {
+                    if (!_isFirstResponseReceived) {
+                        _isFirstResponseReceived = true;
+                        LoadTracks();
+                    }
+                }, stopWaitingForFirstResponseAfter);
+            }
         } else {
             if (_trackA._state == State.Idle) {
                 LoadDefault(_trackA);

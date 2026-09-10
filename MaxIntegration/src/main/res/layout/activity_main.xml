@@ -77,6 +77,14 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="20dp"
                     android:text="Optimized" />
+
+                <Button
+                    android:id="@+id/indifferent"
+                    android:layout_weight="1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="20dp"
+                    android:text="Nefta decides" />
             </LinearLayout>
 
             <TableRow

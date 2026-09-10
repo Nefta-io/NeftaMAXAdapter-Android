@@ -20,11 +20,16 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
-
     private String[] _dynamicAdUnits = new String[] {
         Interstitial.AdUnitA, Interstitial.AdUnitA,
         Rewarded.AdUnitA, Rewarded.AdUnitB
     };
+
+    private enum TestGroup {
+        Control,
+        Optimized,
+        NeftaDecides
+    }
 
     private CheckBox _consentCheckBox;
     private InterstitialUi _interstitialUi;
@@ -54,16 +59,31 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void InitializeNefta() {
+    private void InitializeNefta(TestGroup testGroup) {
         NeftaPlugin.EnableLogging(true);
         NeftaMediationAdapter.InitWithAppId(getApplicationContext(), "5632029345447936", (InitConfiguration config) -> {
             Log.i("NeftaPluginMAX", "Nefta initialized nuid: " + config._nuid);
             _isNeftaReady = true;
-            OnAdLogicReady();
+
+            if (testGroup == TestGroup.NeftaDecides) {
+                InitializeMAX(config._isSessionOptimized);
+            } else {
+                OnAdLogicReady();
+            }
         });
     }
 
     private void InitializeMAX(boolean isOptimized) {
+        Log.i("NeftaPluginMAX", "Initializing MAX as " + (isOptimized ? "optimized" : "control"));
+        boolean isSimulator = ((CheckBox)findViewById(R.id.isSimulator)).isChecked();
+        if (isSimulator) {
+            _isMaxReady = true;
+            OnAdLogicReady();
+            _interstitialSim.SetOptimized(isOptimized);
+            _rewardedSim.SetOptimized(isOptimized);
+            return;
+        }
+
         AppLovinPrivacySettings.setHasUserConsent(true);
         AppLovinSdk sdk = AppLovinSdk.getInstance(this);
         sdk.getSettings().setVerboseLogging(true);
@@ -111,13 +131,19 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.control).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Initialize(false);
+                Initialize(TestGroup.Control);
             }
         });
         findViewById(R.id.optimized).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Initialize(true);
+                Initialize(TestGroup.Optimized);
+            }
+        });
+        findViewById(R.id.indifferent).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Initialize(TestGroup.NeftaDecides);
             }
         });
 
@@ -128,18 +154,14 @@ public class MainActivity extends AppCompatActivity {
         _rewardedSim = findViewById(R.id.rewardedSim);
     }
 
-    private void Initialize(boolean isOptimized) {
-        InitializeNefta();
-
+    private void Initialize(TestGroup testGroup) {
         findViewById(R.id.groupView).setVisibility(View.GONE);
-        boolean isSimulator = ((CheckBox)findViewById(R.id.isSimulator)).isChecked();
-        if (isSimulator) {
-            _isMaxReady = true;
 
-            _interstitialSim.SetOptimized(isOptimized);
-            _rewardedSim.SetOptimized(isOptimized);
-        } else {
-            InitializeMAX(isOptimized);
+        InitializeNefta(testGroup);
+        if (testGroup == TestGroup.Control) {
+            InitializeMAX(false);
+        } else if (testGroup == TestGroup.Optimized) {
+            InitializeMAX(true);
         }
     }
 }

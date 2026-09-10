@@ -13,6 +13,7 @@ import com.applovin.mediation.adapters.NeftaMediationAdapter;
 import com.applovin.mediation.ads.MaxInterstitialAd;
 import com.nefta.sdk.AdInsight;
 import com.nefta.sdk.Insights;
+import com.nefta.sdk.NeftaPlugin;
 
 import java.util.Locale;
 
@@ -114,6 +115,7 @@ public class InterstitialOptimized implements Interstitial {
 
     private Track _trackA;
     private Track _trackB;
+    private boolean _isFirstRequest = true;
     private boolean _isFirstResponseReceived = false;
 
     private InterstitialUi _ui;
@@ -134,6 +136,18 @@ public class InterstitialOptimized implements Interstitial {
 
         LoadTrack(_trackA, _trackB._state);
         LoadTrack(_trackB, _trackA._state);
+
+        int stopWaitingForFirstResponseAfter = NeftaPlugin._instance._state._firstResponseTimeoutInterstitialInMs;
+        if (_isFirstRequest && stopWaitingForFirstResponseAfter > 0) {
+            _isFirstRequest = false;
+
+            _handler.postDelayed(() -> {
+                if (!_isFirstResponseReceived) {
+                    _isFirstResponseReceived = true;
+                    Load();
+                }
+            }, stopWaitingForFirstResponseAfter);
+        }
     }
 
     private void LoadTrack(Track track, State otherState) {
