@@ -194,7 +194,6 @@ public class InterstitialSim extends TableLayout {
             Load(_trackA, _trackB._state);
             Load(_trackB, _trackA._state);
 
-
             int stopWaitingForFirstResponseAfter = NeftaPlugin._instance._state._firstResponseTimeoutInterstitialInMs;
             if (_isFirstRequest && stopWaitingForFirstResponseAfter > 0) {
                 _isFirstRequest = false;
@@ -232,7 +231,10 @@ public class InterstitialSim extends TableLayout {
             Log("LoadWithInsights: " + insights);
             if (insights._interstitial != null) {
                 track._insight = insights._interstitial;
-                String bidFloor = String.format(Locale.ROOT, "%.10f", track._insight._floorPrice);
+                String bidFloor = "";
+                if (track._insight._floorPrice >= 0) {
+                    bidFloor = String.format(Locale.ROOT, "%.10f", track._insight._floorPrice);
+                }
 
                 track._interstitial.setExtraParameter("disable_auto_retries", "true");
                 track._interstitial.setExtraParameter("jC7Fp", bidFloor);

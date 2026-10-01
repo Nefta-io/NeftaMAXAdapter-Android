@@ -214,7 +214,10 @@ public class RewardedSim extends TableLayout {
             Log("LoadWithInsights: " + insights);
             if (insights._rewarded != null) {
                 track._insight = insights._rewarded;
-                String bidFloor = String.format(Locale.ROOT, "%.10f", track._insight._floorPrice);
+                String bidFloor = "";
+                if (track._insight._floorPrice >= 0) {
+                    bidFloor = String.format(Locale.ROOT, "%.10f", track._insight._floorPrice);
+                }
 
                 track._rewarded.setExtraParameter("disable_auto_retries", "true");
                 track._rewarded.setExtraParameter("jC7Fp", bidFloor);
