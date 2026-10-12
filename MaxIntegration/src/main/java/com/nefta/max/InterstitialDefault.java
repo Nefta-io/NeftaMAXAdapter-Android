@@ -23,7 +23,7 @@ public class InterstitialDefault implements MaxAdListener, MaxAdRevenueListener,
         _ui = ui;
         _handler = new Handler(Looper.getMainLooper());
 
-        _interstitial = new MaxInterstitialAd(Interstitial.AdUnitA);
+        _interstitial = new MaxInterstitialAd(Interstitial.AdUnitDefault);
         _interstitial.setListener(this);
         _interstitial.setRevenueListener(this);
     }
@@ -49,7 +49,7 @@ public class InterstitialDefault implements MaxAdListener, MaxAdRevenueListener,
 
         _consecutiveAdFails = 0;
 
-        _ui.SetAdAvailability(true);
+        _ui.SetAvailability(true);
     }
 
     @Override
@@ -101,7 +101,7 @@ public class InterstitialDefault implements MaxAdListener, MaxAdRevenueListener,
             Load();
         }
 
-        _ui.SetAdAvailability(false);
+        _ui.SetAvailability(false);
     }
 
     void Log(String log) {

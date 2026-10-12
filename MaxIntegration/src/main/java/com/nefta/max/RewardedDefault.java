@@ -24,7 +24,7 @@ public class RewardedDefault implements MaxRewardedAdListener, MaxAdRevenueListe
         _ui = ui;
         _handler = new Handler(Looper.getMainLooper());
 
-        _rewarded = MaxRewardedAd.getInstance(Rewarded.AdUnitA);
+        _rewarded = MaxRewardedAd.getInstance(Rewarded.AdUnitDefault);
         _rewarded.setListener(this);
         _rewarded.setRevenueListener(this);
     }

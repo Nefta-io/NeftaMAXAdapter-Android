@@ -7,13 +7,14 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.LinearLayout;
 import android.widget.Switch;
 import android.widget.TableLayout;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 
-public class RewardedUi extends TableLayout {
+public class RewardedUi extends LinearLayout {
 
     private Switch _loadSwitch;
     private Button _showButton;
@@ -68,10 +69,6 @@ public class RewardedUi extends TableLayout {
                 _logic.Show();
             }
         });
-    }
-
-    public void OnAdLogicReady() {
-        _loadSwitch.setEnabled(true);
     }
 
     public void SetAvailability(boolean isAvailable) {

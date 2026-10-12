@@ -21,23 +21,28 @@ public class InterstitialOptimized implements Interstitial {
 
     private enum State {
         Idle,
-        LoadingWithInsights,
         Loading,
         Ready,
         Shown,
+        Delay
     }
 
     private class Track implements MaxAdListener, MaxAdRevenueListener {
         public final String _adUnitId;
+        public final boolean _isOptimized;
         public MaxInterstitialAd _interstitial;
         public State _state = State.Idle;
         public AdInsight _insight;
         public double _revenue;
 
-        public Track(String adUnit) {
+        public Track(String adUnit, boolean isOptimized) {
             _adUnitId = adUnit;
+            _isOptimized = isOptimized;
 
             _interstitial = new MaxInterstitialAd(_adUnitId);
+            if (_isOptimized) {
+                _interstitial.setExtraParameter("disable_auto_retries", "true");
+            }
             _interstitial.setListener(this);
             _interstitial.setRevenueListener(this);
         }
@@ -48,13 +53,7 @@ public class InterstitialOptimized implements Interstitial {
 
             Log("Load failed " + adUnitId + ": " + maxError.getMessage());
 
-            OnLoadFail();
-        }
-
-        public void OnLoadFail() {
-            RetryLoad();
-
-            OnTrackLoad(false);
+            OnTrackLoad(this, false);
         }
 
         @Override
@@ -67,14 +66,7 @@ public class InterstitialOptimized implements Interstitial {
             _revenue = ad.getRevenue();
             _state = State.Ready;
 
-            OnTrackLoad(true);
-        }
-
-        public void RetryLoad() {
-            _handler.postDelayed(() -> {
-                _state = State.Idle;
-                Load();
-            }, (long)(NeftaMediationAdapter.GetRetryDelayInSeconds(_insight, _adUnitId) * 1000));
+            OnTrackLoad(this, true);
         }
 
         @Override
@@ -101,7 +93,7 @@ public class InterstitialOptimized implements Interstitial {
             Log("onAdHidden "+ ad.getAdUnitId());
 
             _state = State.Idle;
-            Load();
+            ContinueLoading();
         }
 
         @Override
@@ -109,14 +101,14 @@ public class InterstitialOptimized implements Interstitial {
             Log("onAdDisplayFailed "+ ad.getAdUnitId());
 
             _state = State.Idle;
-            Load();
+            ContinueLoading();
         }
     }
 
-    private Track _trackA;
-    private Track _trackB;
+    private Track[] _tracks;
     private boolean _isFirstRequest = true;
     private boolean _isFirstResponseReceived = false;
+    private boolean _isGlobalCooldown;
 
     private InterstitialUi _ui;
     private Handler _handler;
@@ -125,17 +117,19 @@ public class InterstitialOptimized implements Interstitial {
         _ui = ui;
         _handler = new Handler(Looper.getMainLooper());
 
-        _trackA = new Track(Interstitial.AdUnitA);
-        _trackB = new Track(Interstitial.AdUnitB);
+        _tracks = new Track[] {
+            new Track(Interstitial.AdUnitDefault, false),
+            new Track(Interstitial.AdUnitOptimizedA, true),
+            new Track(Interstitial.AdUnitOptimizedB, true)
+        };
     }
 
     public void Load() {
-        if (!_ui.IsAutoLoad) {
+        if (!_isFirstRequest) {
             return;
         }
 
-        LoadTrack(_trackA, _trackB._state);
-        LoadTrack(_trackB, _trackA._state);
+        Load(_tracks[1]);
 
         int stopWaitingForFirstResponseAfter = NeftaPlugin._instance._state._firstResponseTimeoutInterstitialInMs;
         if (_isFirstRequest && stopWaitingForFirstResponseAfter > 0) {
@@ -144,75 +138,104 @@ public class InterstitialOptimized implements Interstitial {
             _handler.postDelayed(() -> {
                 if (!_isFirstResponseReceived) {
                     _isFirstResponseReceived = true;
-                    Load();
+                    if (_tracks[2]._state == State.Idle) {
+                        Load(_tracks[2]);
+                    }
                 }
             }, stopWaitingForFirstResponseAfter);
         }
-    }
 
-    private void LoadTrack(Track track, State otherState) {
-        if (track._state == State.Idle) {
-            if (otherState == State.LoadingWithInsights || otherState == State.Shown) {
-                if (_isFirstResponseReceived) {
-                    LoadDefault(track);
-                }
-            } else {
-                GetInsightsAndLoad(track);
-            }
+        int backFillTrackDelayInMs = NeftaPlugin._instance._state._backfillTrackDelayInMs;
+        if (backFillTrackDelayInMs == 0) {
+            Load(_tracks[0]);
+        } else if (backFillTrackDelayInMs > 0) {
+            _handler.postDelayed(() -> {
+                Load(_tracks[0]);
+            }, backFillTrackDelayInMs);
         }
     }
 
-    private void GetInsightsAndLoad(Track track) {
-        track._state = State.LoadingWithInsights;
-
-        NeftaMediationAdapter.GetInsights(Insights.INTERSTITIAL, track._insight, (Insights insights) -> {
-            Log("LoadWithInsights: " + insights);
-            if (insights._interstitial != null) {
-                track._insight = insights._insight;
-                String bidFloor = "";
-                if (track._insight._floorPrice >= 0) {
-                    bidFloor = String.format(Locale.ROOT, "%.10f", track._insight._floorPrice);
-                }
-
-                track._interstitial.setExtraParameter("disable_auto_retries", "true");
-                track._interstitial.setExtraParameter("jC7Fp", bidFloor);
-
-                NeftaMediationAdapter.OnExternalMediationRequest(track._interstitial, track._insight);
-
-                Log("Loading "+ track._adUnitId + " as Optimized with floor: " + bidFloor);
-                track._interstitial.loadAd();
-            } else {
-                track.OnLoadFail();
-            }
-        });
-    }
-
-    private void LoadDefault(Track track) {
+    private void Load(Track track) {
         track._state = State.Loading;
 
-        track._interstitial.setExtraParameter("disable_auto_retries", "false");
-        track._interstitial.setExtraParameter("jC7Fp", "");
+        if (track._isOptimized) {
+            NeftaMediationAdapter.GetInsights(Insights.INTERSTITIAL, track._insight, (Insights insights) -> {
+                Log("LoadWithInsights: " + insights);
+                if (insights._interstitial != null) {
+                    track._insight = insights._insight;
+                    String bidFloor = "";
+                    if (track._insight._floorPrice >= 0) {
+                        bidFloor = String.format(Locale.ROOT, "%.10f", track._insight._floorPrice);
+                    }
 
-        NeftaMediationAdapter.OnExternalMediationRequest(track._interstitial);
+                    track._interstitial.setExtraParameter("jC7Fp", bidFloor);
 
-        Log("Loading "+ track._adUnitId + " as Default");
-        track._interstitial.loadAd();
+                    NeftaMediationAdapter.OnExternalMediationRequest(track._interstitial, track._insight);
+
+                    Log("Loading "+ track._adUnitId + " as Optimized with floor: " + bidFloor);
+                    track._interstitial.loadAd();
+                } else {
+                    _handler.postDelayed(() -> {
+                        track._state = State.Idle;
+                        ContinueLoading();
+                    }, (int)(NeftaPlugin.GetRetryDelayInSeconds(track._insight, track._adUnitId) * 1000));
+                }
+            });
+        } else {
+            NeftaMediationAdapter.OnExternalMediationRequest(track._interstitial);
+
+            Log("Loading "+ track._adUnitId + " as Default");
+            track._interstitial.loadAd();
+        }
+    }
+
+    public void ContinueOptimized() {
+        if (_tracks[0]._state == State.Idle) {
+            Load(_tracks[0]);
+        }
+
+        _isGlobalCooldown = true;
+        _handler.postDelayed(() -> {
+            _isGlobalCooldown = false;
+            ContinueLoading();
+        }, NeftaPlugin._instance._state._globalTrackCooldownInMs);
+    }
+
+    private void ContinueLoading() {
+        if (!_ui.IsAutoLoad) {
+            return;
+        }
+
+        if (_tracks[0]._state == State.Idle) {
+            Load(_tracks[0]);
+        }
+        if (_isGlobalCooldown) {
+            return;
+        }
+        for (int i = 1; i < _tracks.length; i++) {
+            if (_tracks[i]._state == State.Loading) {
+                return;
+            }
+        }
+        for (int i = 1; i < _tracks.length; i++) {
+            if (_tracks[i]._state == State.Idle) {
+                Load(_tracks[i]);
+                return;
+            }
+        }
     }
 
     public void Show() {
         boolean isShown = false;
-        if (_trackA._state == State.Ready) {
-            if (_trackB._state == State.Ready && _trackB._revenue > _trackA._revenue) {
-                isShown = TryShow(_trackB);
-            }
-            if (!isShown) {
-                isShown = TryShow(_trackA);
-            }
+        Track readyTrack = GetReadyTrack();
+        if (readyTrack != null) {
+            isShown = TryShow(readyTrack);
         }
-        if (!isShown && _trackB._state == State.Ready) {
-            TryShow(_trackB);
+        if (!isShown) {
+            ContinueLoading();
         }
-        UpdateAvailability();
+        readyTrack = GetReadyTrack();
+        _ui.SetAvailability(readyTrack != null);
     }
 
     private boolean TryShow(Track track) {
@@ -223,21 +246,35 @@ public class InterstitialOptimized implements Interstitial {
             return true;
         }
         track._state = State.Idle;
-        Load();
         return false;
     }
 
-    public void OnTrackLoad(boolean success) {
-        if (success) {
-            UpdateAvailability();
+    public void OnTrackLoad(Track track, boolean success) {
+        _isFirstResponseReceived = true;
+        if (track._isOptimized) {
+            ContinueOptimized();
         }
 
-        _isFirstResponseReceived = true;
-        Load();
+        if (success) {
+            _ui.SetAvailability(true);
+        } else {
+            track._state = State.Delay;
+            int delay = (int)(NeftaPlugin.GetRetryDelayInSeconds(track._insight, track._adUnitId) * 1000);
+            _handler.postDelayed(() -> {
+                track._state = State.Idle;
+                ContinueLoading();
+            }, delay);
+        }
     }
 
-    private void UpdateAvailability() {
-        _ui.SetAdAvailability(_trackA._state == State.Ready || _trackB._state == State.Ready);
+    private Track GetReadyTrack() {
+        Track bestTrack = null;
+        for (Track t : _tracks) {
+            if (t._state == State.Ready && (bestTrack == null || t._revenue > bestTrack._revenue)) {
+                bestTrack = t;
+            }
+        }
+        return bestTrack;
     }
 
     void Log(String log) {

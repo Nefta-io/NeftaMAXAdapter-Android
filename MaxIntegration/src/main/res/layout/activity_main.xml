@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -18,438 +19,619 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <TableLayout
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:translationY="60dp">
+            android:layout_height="match_parent"
+            android:orientation="vertical">
 
-            <TableRow
+            <TextView
+                android:id="@+id/title"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="MAX Integration"
+                android:textColor="#000000"
+                android:textSize="24sp" />
 
-                <TextView
-                    android:id="@+id/title"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:text="MAX Integration"
-                    android:textColor="#000000"
-                    android:textSize="24sp" />
-            </TableRow>
-            <TableRow
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginTop="10dp"
-                android:layout_marginBottom="10dp">
+                android:layout_height="60dp"
+                android:orientation="horizontal">
+
                 <CheckBox
                     android:id="@+id/hasConsent"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:checked="true"
+                    android:layout_margin="20dp"
                     android:text="Has Consent" />
+
                 <CheckBox
                     android:id="@+id/isSimulator"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_margin="20dp"
                     android:checked="true"
                     android:text="Is Simulator" />
-            </TableRow>
+            </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/groupView"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:orientation="vertical">
 
                 <Button
-                    android:id="@+id/control"
-                    android:layout_weight="1"
+                    android:id="@+id/unknown"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="20dp"
-                    android:text="Control" />
+                    android:text="Unknown" />
 
                 <Button
                     android:id="@+id/optimized"
-                    android:layout_weight="1"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="20dp"
                     android:text="Optimized" />
 
                 <Button
-                    android:id="@+id/indifferent"
-                    android:layout_weight="1"
+                    android:id="@+id/notOptimized"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="20dp"
-                    android:text="Nefta decides" />
+                    android:text="Not optimized" />
             </LinearLayout>
 
-            <TableRow
+            <com.nefta.max.InterstitialUi
+                android:id="@+id/interstitial"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
 
-                <com.nefta.max.InterstitialSim
-                    android:id="@+id/interstitialSim"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="20dp"
-                    android:visibility="gone">
+                    android:orientation="horizontal">
 
-                    <TableRow>
+                    <Switch
+                        android:id="@+id/interstitial_load"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Load Interstitial" />
 
-                        <Switch
-                            android:id="@+id/interstitialSim_load"
-                            android:layout_span="2"
-                            android:enabled="false"
-                            android:text="Load Interstitial" />
+                    <Button
 
-                        <Button
-                            android:id="@+id/interstitialSim_show"
-                            android:layout_margin="5dp"
-                            android:layout_span="2"
-                            android:background="@drawable/button"
-                            android:foregroundGravity="center"
-                            android:minHeight="30dp"
-                            android:text="Show"
-                            android:textColor="#FFFFFF" />
-                    </TableRow>
+                        android:id="@+id/interstitial_show"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Show Interstitial"
+                        android:textColor="#FFFFFF" />
+                </LinearLayout>
 
-                    <TableRow>
+                <TextView
+                    android:id="@+id/interstitial_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:singleLine="false"
+                    android:text="Status"
+                    android:textColor="#000000" />
+            </com.nefta.max.InterstitialUi>
 
-                        <TextView
-                            android:id="@+id/interstitialSim_statusA"
-                            android:layout_span="4"
-                            android:singleLine="false"
-                            android:text="A"
-                            android:textAlignment="center"
-                            android:textColor="#000000" />
-                    </TableRow>
-
-                    <TableRow>
-
-                        <Button
-                            android:id="@+id/interstitialSim_fill2A"
-                            android:layout_margin="5dp"
-                            android:background="@drawable/button"
-                            android:foregroundGravity="center"
-                            android:minHeight="30dp"
-                            android:text="Fill 2"
-                            android:textColor="#FFFFFF" />
-
-                        <Button
-                            android:id="@+id/interstitialSim_fill1A"
-                            android:layout_margin="5dp"
-                            android:background="@drawable/button"
-                            android:foregroundGravity="center"
-                            android:minHeight="30dp"
-                            android:text="Fill 1"
-                            android:textColor="#FFFFFF" />
-
-                        <Button
-                            android:id="@+id/interstitialSim_noFillA"
-                            android:layout_margin="5dp"
-                            android:background="@drawable/button"
-                            android:foregroundGravity="center"
-                            android:minHeight="30dp"
-                            android:text="No Fill"
-                            android:textColor="#FFFFFF" />
-
-                        <Button
-                            android:id="@+id/interstitialSim_OtherA"
-                            android:layout_margin="5dp"
-                            android:background="@drawable/button"
-                            android:foregroundGravity="center"
-                            android:minHeight="30dp"
-                            android:text="Other"
-                            android:textColor="#FFFFFF" />
-                    </TableRow>
-
-                    <TableRow>
-
-                        <TextView
-                            android:id="@+id/interstitialSim_statusB"
-                            android:layout_span="4"
-                            android:singleLine="false"
-                            android:text="B"
-                            android:textAlignment="center"
-                            android:textColor="#000000" />
-                    </TableRow>
-
-                    <TableRow>
-
-                        <Button
-                            android:id="@+id/interstitialSim_fill2B"
-                            android:layout_margin="5dp"
-                            android:background="@drawable/button"
-                            android:foregroundGravity="center"
-                            android:minHeight="30dp"
-                            android:text="Fill 2"
-                            android:textColor="#FFFFFF" />
-
-                        <Button
-                            android:id="@+id/interstitialSim_fill1B"
-                            android:layout_margin="5dp"
-                            android:background="@drawable/button"
-                            android:foregroundGravity="center"
-                            android:minHeight="30dp"
-                            android:text="Fill 1"
-                            android:textColor="#FFFFFF" />
-
-                        <Button
-                            android:id="@+id/interstitialSim_noFillB"
-                            android:layout_margin="5dp"
-                            android:background="@drawable/button"
-                            android:foregroundGravity="center"
-                            android:minHeight="30dp"
-                            android:text="No Fill"
-                            android:textColor="#FFFFFF" />
-
-                        <Button
-                            android:id="@+id/interstitialSim_OtherB"
-                            android:layout_margin="5dp"
-                            android:background="@drawable/button"
-                            android:foregroundGravity="center"
-                            android:minHeight="30dp"
-                            android:text="Other"
-                            android:textColor="#FFFFFF" />
-                    </TableRow>
-
-                    <TableRow>
-
-                        <TextView
-                            android:id="@+id/interstitialSim_status"
-                            android:layout_height="wrap_content"
-                            android:layout_span="4"
-                            android:singleLine="false"
-                            android:text="Status"
-                            android:textColor="#000000" />
-                    </TableRow>
-                </com.nefta.max.InterstitialSim>
-            </TableRow>
-
-            <TableRow
+            <com.nefta.max.RewardedUi
+                android:id="@+id/rewarded"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
 
-                <com.nefta.max.RewardedSim
-                    android:id="@+id/rewardedSim"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:visibility="gone">
+                    android:orientation="horizontal">
 
-                    <TableRow>
+                    <Switch
+                        android:id="@+id/rewarded_load"
+                        android:layout_height="wrap_content"
+                        android:layout_width="wrap_content"
+                        android:layout_marginLeft="20dp"
+                        android:text="Load Rewarded" />
 
-                        <Switch
-                            android:id="@+id/rewardedSim_load"
-                            android:layout_span="2"
-                            android:enabled="false"
-                            android:text="Load Rewarded" />
+                    <Button
+                        android:id="@+id/rewarded_show"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:layout_width="wrap_content"
+                        android:text="Show Rewarded"
+                        android:textColor="#FFFFFF" />
 
-                        <Button
-                            android:id="@+id/rewardedSim_show"
-                            android:layout_margin="5dp"
-                            android:layout_span="2"
-                            android:background="@drawable/button"
-                            android:foregroundGravity="center"
-                            android:minHeight="30dp"
-                            android:text="Show"
-                            android:textColor="#FFFFFF" />
-                    </TableRow>
+                </LinearLayout>
 
-                    <TableRow>
-
-                        <TextView
-                            android:id="@+id/rewardedSim_statusA"
-                            android:layout_span="4"
-                            android:singleLine="false"
-                            android:text="A"
-                            android:textAlignment="center"
-                            android:textColor="#000000" />
-                    </TableRow>
-
-                    <TableRow>
-
-                        <Button
-                            android:id="@+id/rewardedSim_fill2A"
-                            android:layout_margin="5dp"
-                            android:background="@drawable/button"
-                            android:foregroundGravity="center"
-                            android:minHeight="30dp"
-                            android:text="Fill 2"
-                            android:textColor="#FFFFFF" />
-
-                        <Button
-                            android:id="@+id/rewardedSim_fill1A"
-                            android:layout_margin="5dp"
-                            android:background="@drawable/button"
-                            android:foregroundGravity="center"
-                            android:minHeight="30dp"
-                            android:text="Fill 1"
-                            android:textColor="#FFFFFF" />
-
-                        <Button
-                            android:id="@+id/rewardedSim_noFillA"
-                            android:layout_margin="5dp"
-                            android:background="@drawable/button"
-                            android:foregroundGravity="center"
-                            android:minHeight="30dp"
-                            android:text="No Fill"
-                            android:textColor="#FFFFFF" />
-
-                        <Button
-                            android:id="@+id/rewardedSim_OtherA"
-                            android:layout_margin="5dp"
-                            android:background="@drawable/button"
-                            android:foregroundGravity="center"
-                            android:minHeight="30dp"
-                            android:text="Other"
-                            android:textColor="#FFFFFF" />
-                    </TableRow>
-
-                    <TableRow>
-
-                        <TextView
-                            android:id="@+id/rewardedSim_statusB"
-                            android:layout_span="4"
-                            android:singleLine="false"
-                            android:text="B"
-                            android:textAlignment="center"
-                            android:textColor="#000000" />
-                    </TableRow>
-
-                    <TableRow>
-
-                        <Button
-                            android:id="@+id/rewardedSim_fill2B"
-                            android:layout_margin="5dp"
-                            android:background="@drawable/button"
-                            android:foregroundGravity="center"
-                            android:minHeight="30dp"
-                            android:text="Fill 2"
-                            android:textColor="#FFFFFF" />
-
-                        <Button
-                            android:id="@+id/rewardedSim_fill1B"
-                            android:layout_margin="5dp"
-                            android:background="@drawable/button"
-                            android:foregroundGravity="center"
-                            android:minHeight="30dp"
-                            android:text="Fill 1"
-                            android:textColor="#FFFFFF" />
-
-                        <Button
-                            android:id="@+id/rewardedSim_noFillB"
-                            android:layout_margin="5dp"
-                            android:background="@drawable/button"
-                            android:foregroundGravity="center"
-                            android:minHeight="30dp"
-                            android:text="No Fill"
-                            android:textColor="#FFFFFF" />
-
-                        <Button
-                            android:id="@+id/rewardedSim_OtherB"
-                            android:layout_margin="5dp"
-                            android:background="@drawable/button"
-                            android:foregroundGravity="center"
-                            android:minHeight="30dp"
-                            android:text="Other"
-                            android:textColor="#FFFFFF" />
-                    </TableRow>
-
-                    <TableRow>
-
-                        <TextView
-                            android:id="@+id/rewardedSim_status"
-                            android:layout_height="wrap_content"
-                            android:layout_span="4"
-                            android:singleLine="false"
-                            android:text="Status"
-                            android:textColor="#000000" />
-                    </TableRow>
-                </com.nefta.max.RewardedSim>
-            </TableRow>
-
-            <TableRow>
-
-                <com.nefta.max.InterstitialUi
-                    android:id="@+id/interstitial"
+                <TextView
+                    android:id="@+id/rewarded_status"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:visibility="gone">
+                    android:layout_span="2"
+                    android:singleLine="false"
+                    android:text="Status"
+                    android:textColor="#000000" />
+            </com.nefta.max.RewardedUi>
 
-                    <TableRow android:layout_width="match_parent">
+            <com.nefta.max.InterstitialSim
+                android:id="@+id/interstitialSim"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                android:orientation="vertical"
+                android:visibility="gone">
 
-                        <Switch
-                            android:id="@+id/interstitial_load"
-                            android:enabled="false"
-                            android:text="Load Interstitial" />
-
-                        <Button
-                            android:id="@+id/interstitial_show"
-                            android:layout_margin="5dp"
-                            android:background="@drawable/button"
-                            android:foregroundGravity="center"
-                            android:text="Show Interstitial"
-                            android:textColor="#FFFFFF" />
-                    </TableRow>
-
-                    <TableRow>
-
-                        <TextView
-                            android:id="@+id/interstitial_status"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_span="2"
-                            android:singleLine="false"
-                            android:text="Status"
-                            android:textColor="#000000" />
-                    </TableRow>
-                </com.nefta.max.InterstitialUi>
-            </TableRow>
-
-
-            <TableRow>
-
-                <com.nefta.max.RewardedUi
-                    android:id="@+id/rewarded"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:visibility="gone">
+                    android:orientation="horizontal">
 
-                    <TableRow android:layout_width="match_parent">
+                    <Switch
+                        android:id="@+id/interstitialSim_load"
+                        android:layout_width="wrap_content"
+                        android:layout_height="30dp"
+                        android:text="Load Interstitial" />
 
-                        <Switch
-                            android:id="@+id/rewarded_load"
-                            android:enabled="false"
-                            android:text="Load Rewarded" />
+                    <Button
+                        android:id="@+id/interstitialSim_show"
+                        android:layout_width="wrap_content"
+                        android:layout_height="30dp"
+                        android:layout_marginLeft="40dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Show"
+                        android:textColor="#FFFFFF" />
+                </LinearLayout>
 
-                        <Button
-                            android:id="@+id/rewarded_show"
-                            android:layout_margin="5dp"
-                            android:background="@drawable/button"
-                            android:foregroundGravity="center"
-                            android:text="Show Rewarded"
-                            android:textColor="#FFFFFF" />
 
-                    </TableRow>
+                <TextView
+                    android:id="@+id/interstitialSim_statusA"
+                    android:layout_width="wrap_content"
+                    android:layout_height="30dp"
+                    android:singleLine="false"
+                    android:text="A"
+                    android:textAlignment="center"
+                    android:textColor="#000000" />
 
-                    <TableRow>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
 
-                        <TextView
-                            android:id="@+id/rewarded_status"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_span="2"
-                            android:singleLine="false"
-                            android:text="Status"
-                            android:textColor="#000000" />
-                    </TableRow>
-                </com.nefta.max.RewardedUi>
-            </TableRow>
-        </TableLayout>
+                    <Button
+                        android:id="@+id/interstitialSim_fill3A"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:layout_marginRight="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Fill 3"
+                        android:textColor="#FFFFFF" />
+
+                    <Button
+                        android:id="@+id/interstitialSim_fill2A"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:layout_marginRight="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Fill 2"
+                        android:textColor="#FFFFFF" />
+
+                    <Button
+                        android:id="@+id/interstitialSim_fill1A"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:layout_marginRight="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Fill 1"
+                        android:textColor="#FFFFFF" />
+
+                    <Button
+                        android:id="@+id/interstitialSim_noFillA"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:layout_marginRight="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="No Fill"
+                        android:textColor="#FFFFFF" />
+
+                    <Button
+                        android:id="@+id/interstitialSim_OtherA"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Other"
+                        android:textColor="#FFFFFF" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/interstitialSim_statusB"
+                    android:layout_width="wrap_content"
+                    android:layout_height="30dp"
+                    android:singleLine="false"
+                    android:text="B"
+                    android:textAlignment="center"
+                    android:textColor="#000000" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/interstitialSim_fill3B"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:layout_marginRight="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Fill 3"
+                        android:textColor="#FFFFFF" />
+
+                    <Button
+                        android:id="@+id/interstitialSim_fill2B"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:layout_marginRight="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Fill 2"
+                        android:textColor="#FFFFFF" />
+
+                    <Button
+                        android:id="@+id/interstitialSim_fill1B"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:layout_marginRight="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Fill 1"
+                        android:textColor="#FFFFFF" />
+
+                    <Button
+                        android:id="@+id/interstitialSim_noFillB"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:layout_marginRight="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="No Fill"
+                        android:textColor="#FFFFFF" />
+
+                    <Button
+                        android:id="@+id/interstitialSim_OtherB"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Other"
+                        android:textColor="#FFFFFF" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/interstitialSim_statusD"
+                    android:layout_width="wrap_content"
+                    android:layout_height="30dp"
+                    android:singleLine="false"
+                    android:text="D"
+                    android:textAlignment="center"
+                    android:textColor="#000000" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/interstitialSim_fill3D"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:layout_marginRight="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Fill 3"
+                        android:textColor="#FFFFFF" />
+
+                    <Button
+                        android:id="@+id/interstitialSim_fill2D"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:layout_marginRight="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Fill 2"
+                        android:textColor="#FFFFFF" />
+
+                    <Button
+                        android:id="@+id/interstitialSim_fill1D"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:layout_marginRight="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Fill 1"
+                        android:textColor="#FFFFFF" />
+
+                    <Button
+                        android:id="@+id/interstitialSim_noFillD"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:layout_marginRight="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="No Fill"
+                        android:textColor="#FFFFFF" />
+
+                    <Button
+                        android:id="@+id/interstitialSim_OtherD"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Other"
+                        android:textColor="#FFFFFF" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/interstitialSim_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="30dp"
+                    android:singleLine="false"
+                    android:text="Status"
+                    android:textColor="#000000" />
+
+            </com.nefta.max.InterstitialSim>
+
+            <com.nefta.max.RewardedSim
+                android:id="@+id/rewardedSim"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="30dp"
+                    android:orientation="horizontal">
+
+                    <Switch
+                        android:id="@+id/rewardedSim_load"
+                        android:layout_width="wrap_content"
+                        android:layout_height="30dp"
+                        android:text="Load Rewarded" />
+
+                    <Button
+                        android:id="@+id/rewardedSim_show"
+                        android:layout_width="wrap_content"
+                        android:layout_height="30dp"
+                        android:layout_marginLeft="40dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Show"
+                        android:textColor="#FFFFFF" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/rewardedSim_statusA"
+                    android:layout_width="match_parent"
+                    android:layout_height="30dp"
+                    android:singleLine="false"
+                    android:text="A"
+                    android:textAlignment="center"
+                    android:textColor="#000000" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="30dp"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/rewardedSim_fill3A"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:layout_marginRight="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Fill 3"
+                        android:textColor="#FFFFFF" />
+
+                    <Button
+                        android:id="@+id/rewardedSim_fill2A"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:layout_marginRight="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Fill 2"
+                        android:textColor="#FFFFFF" />
+
+                    <Button
+                        android:id="@+id/rewardedSim_fill1A"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:layout_marginRight="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Fill 1"
+                        android:textColor="#FFFFFF" />
+
+                    <Button
+                        android:id="@+id/rewardedSim_noFillA"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:layout_marginRight="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="No Fill"
+                        android:textColor="#FFFFFF" />
+
+                    <Button
+                        android:id="@+id/rewardedSim_OtherA"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Other"
+                        android:textColor="#FFFFFF" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/rewardedSim_statusB"
+                    android:layout_width="match_parent"
+                    android:layout_height="30dp"
+                    android:singleLine="false"
+                    android:text="B"
+                    android:textAlignment="center"
+                    android:textColor="#000000" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="30dp"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/rewardedSim_fill3B"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:layout_marginRight="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Fill 3"
+                        android:textColor="#FFFFFF" />
+
+                    <Button
+                        android:id="@+id/rewardedSim_fill2B"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:layout_marginRight="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:minWidth="0dp"
+                        android:text="Fill 2"
+                        android:textColor="#FFFFFF" />
+
+                    <Button
+                        android:id="@+id/rewardedSim_fill1B"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:layout_marginRight="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:minWidth="0dp"
+                        android:text="Fill 1"
+                        android:textColor="#FFFFFF" />
+
+                    <Button
+                        android:id="@+id/rewardedSim_noFillB"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:layout_marginRight="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:minWidth="0dp"
+                        android:text="No Fill"
+                        android:textColor="#FFFFFF" />
+
+                    <Button
+                        android:id="@+id/rewardedSim_OtherB"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Other"
+                        android:textColor="#FFFFFF" />
+                </LinearLayout>
+
+
+                <TextView
+                    android:id="@+id/rewardedSim_statusD"
+                    android:layout_width="match_parent"
+                    android:layout_height="30dp"
+                    android:singleLine="false"
+                    android:text="D"
+                    android:textAlignment="center"
+                    android:textColor="#000000" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="30dp"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/rewardedSim_fill3D"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:layout_marginRight="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Fill 3"
+                        android:textColor="#FFFFFF" />
+
+                    <Button
+                        android:id="@+id/rewardedSim_fill2D"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:layout_marginRight="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Fill 2"
+                        android:textColor="#FFFFFF" />
+
+                    <Button
+                        android:id="@+id/rewardedSim_fill1D"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:layout_marginRight="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Fill 1"
+                        android:textColor="#FFFFFF" />
+
+                    <Button
+                        android:id="@+id/rewardedSim_noFillD"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:layout_marginRight="5dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="No Fill"
+                        android:textColor="#FFFFFF" />
+
+                    <Button
+                        android:id="@+id/rewardedSim_OtherD"
+                        android:layout_width="70dp"
+                        android:layout_height="30dp"
+                        android:background="@drawable/button"
+                        android:foregroundGravity="center"
+                        android:text="Other"
+                        android:textColor="#FFFFFF" />
+                </LinearLayout>
+
+
+                <TextView
+                    android:id="@+id/rewardedSim_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="30dp"
+                    android:layout_span="4"
+                    android:singleLine="false"
+                    android:text="Status"
+                    android:textColor="#000000" />
+            </com.nefta.max.RewardedSim>
+
+        </LinearLayout>
 
     </FrameLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

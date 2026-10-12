@@ -11,6 +11,7 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.Switch;
 import android.widget.TableLayout;
 import android.widget.TextView;
@@ -24,11 +25,9 @@ import com.applovin.mediation.MaxAdListener;
 import com.applovin.mediation.MaxAdRevenueListener;
 import com.applovin.mediation.MaxAdWaterfallInfo;
 import com.applovin.mediation.MaxError;
-import com.applovin.mediation.MaxMediatedNetworkInfo;
 import com.applovin.mediation.MaxNetworkResponseInfo;
 import com.applovin.mediation.adapters.NeftaMediationAdapter;
 import com.applovin.mediation.ads.MaxInterstitialAd;
-import com.applovin.sdk.AppLovinSdkSettings;
 import com.nefta.debug.Callback;
 import com.nefta.debug.NDebug;
 import com.nefta.sdk.AdInsight;
@@ -38,29 +37,29 @@ import com.nefta.sdk.NeftaPlugin;
 import org.json.JSONArray;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 
-public class InterstitialSim extends TableLayout {
+public class InterstitialSim extends LinearLayout {
 
     private enum State {
         Idle,
-        LoadingWithInsights,
         Loading,
         Ready,
-        Shown
+        Shown,
+        Delay
     }
 
     private class Track implements MaxAdListener, MaxAdRevenueListener {
         public final String _adUnitId;
+        public final boolean _isOptimized;
         public SimInterstitial _interstitial;
         public State _state = State.Idle;
         public AdInsight _insight;
         public double _revenue;
-        public int _consecutiveAdFails;
 
-        public Track(String adUnit) {
+        public Track(String adUnit, boolean isOptimized) {
             _adUnitId = adUnit;
+            _isOptimized = isOptimized;
 
             _interstitial = new SimInterstitial(_adUnitId);
             _interstitial.setListener(this);
@@ -73,14 +72,7 @@ public class InterstitialSim extends TableLayout {
 
             Log("Load failed " + adUnitId + ": " + maxError.getMessage());
 
-            OnLoadFail();
-        }
-
-        public void OnLoadFail() {
-            _consecutiveAdFails++;
-            RetryLoad();
-
-            OnTrackLoad(false);
+            OnTrackLoad(this, false);
         }
 
         @Override
@@ -90,18 +82,10 @@ public class InterstitialSim extends TableLayout {
             Log("Loaded  "+ _adUnitId +" at: "+ ad.getRevenue());
 
             _insight = null;
-            _consecutiveAdFails = 0;
             _revenue = ad.getRevenue();
             _state = State.Ready;
 
-            OnTrackLoad(true);
-        }
-
-        public void RetryLoad() {
-            _handler.postDelayed(() -> {
-                _state = State.Idle;
-                RetryLoadTracks();
-            }, (long)(NeftaMediationAdapter.GetRetryDelayInSeconds(_insight, _adUnitId) * 1000));
+            OnTrackLoad(this, true);
         }
 
         @Override
@@ -128,7 +112,8 @@ public class InterstitialSim extends TableLayout {
             Log("onAdHidden "+ ad.getAdUnitId());
 
             _state = State.Idle;
-            RetryLoadTracks();
+
+            ContinueLoading();
         }
 
         @Override
@@ -136,38 +121,33 @@ public class InterstitialSim extends TableLayout {
             Log("onAdDisplayFailed "+ ad.getAdUnitId());
 
             _state = State.Idle;
-            RetryLoadTracks();
+
+            ContinueLoading();
         }
     }
 
-    private Track _trackA;
-    private Track _trackB;
+    private Track[] _tracks;
     private boolean _isFirstRequest = true;
     private boolean _isFirstResponseReceived = false;
+    private boolean _isGlobalCooldown;
 
     private Activity _activity;
     private Switch _loadSwitch;
     private Button _showButton;
     private TextView _status;
 
-    private TextView _aStatus;
-    private Button _aFill2;
-    private Button _aFill1;
-    private Button _aNoFill;
-    private Button _aOther;
-
-    private TextView _bStatus;
-    private Button _bFill2;
-    private Button _bFill1;
-    private Button _bNoFill;
-    private Button _bOther;
+    private TextView[] _statuses;
+    private Button[] _fill3;
+    private Button[] _fill2;
+    private Button[] _fill1;
+    private Button[] _noFill;
+    private Button[] _other;
 
     private Handler _handler;
     private boolean _isOptimized;
 
-    public void SetOptimized(boolean isOptimized) {
+    public void Init(boolean isOptimized) {
         _isOptimized = isOptimized;
-        NeftaPlugin.SetInterstitialLogic(_isOptimized);
         setVisibility(View.VISIBLE);
 
         if (NeftaPlugin._instance._state._isDebugEnabled) {
@@ -178,88 +158,116 @@ public class InterstitialSim extends TableLayout {
         }
         NeftaPlugin._instance._state._adProviderCountry = "SIM";
 
-        if (isOptimized) {
+        if (_isOptimized) {
             JSONArray networks = new JSONArray();
             networks.put("simulator");
             NeftaPlugin._instance._state._availableNetworks = networks;
         }
     }
 
-    public void OnAdLogicReady() {
-        _loadSwitch.setEnabled(true);
-    }
+    private void Load() {
+        if (!_isFirstRequest) {
+            return;
+        }
+        if (!_isOptimized) {
+            Load(_tracks[0]);
+            return;
+        }
+        Load(_tracks[1]);
 
-    private void LoadTracks() {
-        if (_isOptimized) {
-            Load(_trackA, _trackB._state);
-            Load(_trackB, _trackA._state);
+        int stopWaitingForFirstResponseAfter = NeftaPlugin._instance._state._firstResponseTimeoutInterstitialInMs;
+        if (_isFirstRequest && stopWaitingForFirstResponseAfter > 0) {
+            _isFirstRequest = false;
 
-            int stopWaitingForFirstResponseAfter = NeftaPlugin._instance._state._firstResponseTimeoutInterstitialInMs;
-            if (_isFirstRequest && stopWaitingForFirstResponseAfter > 0) {
-                _isFirstRequest = false;
-
-                _handler.postDelayed(() -> {
-                    if (!_isFirstResponseReceived) {
-                        _isFirstResponseReceived = true;
-                        LoadTracks();
+            _handler.postDelayed(() -> {
+                if (!_isFirstResponseReceived) {
+                    _isFirstResponseReceived = true;
+                    if (_tracks[2]._state == State.Idle) {
+                        Load(_tracks[2]);
                     }
-                }, stopWaitingForFirstResponseAfter);
-            }
-        } else {
-            if (_trackA._state == State.Idle) {
-                LoadDefault(_trackA);
-            }
+                }
+            }, stopWaitingForFirstResponseAfter);
+        }
+
+        int backFillTrackDelayInMs = NeftaPlugin._instance._state._backfillTrackDelayInMs;
+        if (backFillTrackDelayInMs == 0) {
+            Load(_tracks[0]);
+        } else if (backFillTrackDelayInMs > 0) {
+            _handler.postDelayed(() -> {
+                Load(_tracks[0]);
+            }, backFillTrackDelayInMs);
         }
     }
 
-    private void Load(Track track, State otherState) {
-        if (track._state == State.Idle) {
-            if (otherState == State.LoadingWithInsights || otherState == State.Shown) {
-                if (_isFirstResponseReceived) {
-                    LoadDefault(track);
-                }
-            } else {
-                GetInsightsAndLoad(track);
-            }
-        }
-    }
-
-    private void GetInsightsAndLoad(Track track) {
-        track._state = State.LoadingWithInsights;
-
-        NeftaPlugin._instance.GetInsights(Insights.INTERSTITIAL, track._insight, (Insights insights) -> {
-            Log("LoadWithInsights: " + insights);
-            if (insights._interstitial != null) {
-                track._insight = insights._interstitial;
-                String bidFloor = "";
-                if (track._insight._floorPrice >= 0) {
-                    bidFloor = String.format(Locale.ROOT, "%.10f", track._insight._floorPrice);
-                }
-
-                track._interstitial.setExtraParameter("disable_auto_retries", "true");
-                track._interstitial.setExtraParameter("jC7Fp", bidFloor);
-
-                NeftaMediationAdapter.OnExternalMediationRequest(track._interstitial, track._insight);
-
-                Log("Loading "+ track._adUnitId + " as Optimized with floor: " + bidFloor);
-                track._interstitial.loadAd();
-            } else {
-                track.OnLoadFail();
-            }
-        });
-    }
-
-    private void LoadDefault(Track track) {
+    private void Load(Track track) {
         track._state = State.Loading;
 
-        Log("Loading "+ track._adUnitId + " as Default");
+        if (track._isOptimized) {
+            NeftaPlugin._instance.GetInsights(Insights.INTERSTITIAL, track._insight, (Insights insights) -> {
+                Log("LoadWithInsights: " + insights);
+                if (insights._interstitial != null) {
+                    track._insight = insights._interstitial;
+                    String bidFloor = "";
+                    if (track._insight._floorPrice >= 0) {
+                        bidFloor = String.format(Locale.ROOT, "%.10f", track._insight._floorPrice);
+                    }
 
-        track._interstitial.setExtraParameter("disable_auto_retries", "false");
-        track._interstitial.setExtraParameter("jC7Fp", "");
+                    track._interstitial.setExtraParameter("disable_auto_retries", "true");
+                    track._interstitial.setExtraParameter("jC7Fp", bidFloor);
 
-        NeftaMediationAdapter.OnExternalMediationRequest(track._interstitial);
+                    NeftaMediationAdapter.OnExternalMediationRequest(track._interstitial, track._insight);
 
-        track._interstitial.loadAd();
+                    Log("Loading " + track._adUnitId + " as Optimized with floor: " + bidFloor);
+                    track._interstitial.loadAd();
+                } else {
+                    _handler.postDelayed(() -> {
+                        track._state = State.Idle;
+                        ContinueLoading();
+                    }, (int)(NeftaPlugin.GetRetryDelayInSeconds(track._insight, track._adUnitId) * 1000));
+                }
+            });
+        } else {
+            NeftaMediationAdapter.OnExternalMediationRequest(track._interstitial);
+
+            Log("Loading "+ track._adUnitId + " as Default");
+            track._interstitial.loadAd();
+        }
+    }
+
+    public void ContinueOptimized() {
+        if (_tracks[0]._state == State.Idle) {
+            Load(_tracks[0]);
+        }
+
+        _isGlobalCooldown = true;
+        _handler.postDelayed(() -> {
+            _isGlobalCooldown = false;
+            ContinueLoading();
+        }, NeftaPlugin._instance._state._globalTrackCooldownInMs);
+    }
+
+    private void ContinueLoading() {
+        if (!_loadSwitch.isChecked()) {
+            return;
+        }
+
+        if (_tracks[0]._state == State.Idle) {
+            Load(_tracks[0]);
+        }
+        if (_isGlobalCooldown || !_isOptimized) {
+            return;
+        }
+        for (int i = 1; i < _tracks.length; i++) {
+            if (_tracks[i]._state == State.Loading) {
+                return;
+            }
+        }
+        for (int i = 1; i < _tracks.length; i++) {
+            if (_tracks[i]._state == State.Idle) {
+                Load(_tracks[i]);
+                return;
+            }
+        }
     }
 
     public InterstitialSim(Context context) {
@@ -286,50 +294,69 @@ public class InterstitialSim extends TableLayout {
 
         _handler = new Handler(Looper.getMainLooper());
 
-        _trackA = new Track("Inter Track A");
-        _trackB = new Track("Inter Track B");
+        _tracks = new Track[] {
+            new Track("Inter Track D", false),
+            new Track("Inter Track A", true),
+            new Track("Inter Track B", true)
+        };
 
         _loadSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            RetryLoadTracks();
+            Load();
         });
         _showButton.setOnClickListener(view -> {
             boolean isShown = false;
-            if (_trackA._state == State.Ready) {
-                if (_trackB._state == State.Ready && _trackB._revenue > _trackA._revenue) {
-                    isShown = TryShow(_trackB);
-                }
-                if (!isShown) {
-                    isShown = TryShow(_trackA);
-                }
+            Track readyTrack = GetReadyTrack();
+            if (readyTrack != null) {
+                isShown = TryShow(readyTrack);
             }
-            if (!isShown && _trackB._state == State.Ready) {
-                TryShow(_trackB);
+            if (!isShown) {
+                ContinueLoading();
             }
-            UpdateShowButton();
+            readyTrack = GetReadyTrack();
+            _showButton.setEnabled(readyTrack != null);
         });
         _showButton.setEnabled(false);
 
-        _aStatus = findViewById(R.id.interstitialSim_statusA);
-        _aFill2 = findViewById(R.id.interstitialSim_fill2A);
-        _aFill2.setOnClickListener(v -> SimOnAdLoadedEvent(_trackA, true));
-        _aFill1 = findViewById(R.id.interstitialSim_fill1A);
-        _aFill1.setOnClickListener(v -> SimOnAdLoadedEvent(_trackA, false));
-        _aNoFill = findViewById(R.id.interstitialSim_noFillA);
-        _aNoFill.setOnClickListener(v -> SimOnAdFailedEvent(_trackA, 2));
-        _aOther = findViewById(R.id.interstitialSim_OtherA);
-        _aOther.setOnClickListener(v -> SimOnAdFailedEvent(_trackA, 0));
-        ToggleTrackA(false, true);
+        _statuses = new TextView[] {
+            findViewById(R.id.interstitialSim_statusD),
+            findViewById(R.id.interstitialSim_statusA),
+            findViewById(R.id.interstitialSim_statusB)
+        };
+        _fill3 = new Button[] {
+            findViewById(R.id.interstitialSim_fill3D),
+            findViewById(R.id.interstitialSim_fill3A),
+            findViewById(R.id.interstitialSim_fill3B)
+        };
+        _fill2 = new Button[] {
+            findViewById(R.id.interstitialSim_fill2D),
+            findViewById(R.id.interstitialSim_fill2A),
+            findViewById(R.id.interstitialSim_fill2B)
+        };
+        _fill1 = new Button[] {
+            findViewById(R.id.interstitialSim_fill1D),
+            findViewById(R.id.interstitialSim_fill1A),
+            findViewById(R.id.interstitialSim_fill1B)
+        };
+        _noFill = new Button[] {
+            findViewById(R.id.interstitialSim_noFillD),
+            findViewById(R.id.interstitialSim_noFillA),
+            findViewById(R.id.interstitialSim_noFillB)
+        };
+        _other = new Button[] {
+            findViewById(R.id.interstitialSim_OtherD),
+            findViewById(R.id.interstitialSim_OtherA),
+            findViewById(R.id.interstitialSim_OtherB)
+        };
 
-        _bStatus = findViewById(R.id.interstitialSim_statusB);
-        _bFill2 = findViewById(R.id.interstitialSim_fill2B);
-        _bFill2.setOnClickListener(v -> SimOnAdLoadedEvent(_trackB, true));
-        _bFill1 = findViewById(R.id.interstitialSim_fill1B);
-        _bFill1.setOnClickListener(v -> SimOnAdLoadedEvent(_trackB, false));
-        _bNoFill = findViewById(R.id.interstitialSim_noFillB);
-        _bNoFill.setOnClickListener(v -> SimOnAdFailedEvent(_trackB, 2));
-        _bOther = findViewById(R.id.interstitialSim_OtherB);
-        _bOther.setOnClickListener(v -> SimOnAdFailedEvent(_trackB, 0));
-        ToggleTrackB(false, true);
+        for (int t = 0; t < 3; t++) {
+            int ti = t;
+            _fill3[t].setOnClickListener(v -> SimOnAdLoadedEvent(ti, _tracks[ti], 3));
+            _fill2[t].setOnClickListener(v -> SimOnAdLoadedEvent(ti, _tracks[ti], 2));
+            _fill1[t].setOnClickListener(v -> SimOnAdLoadedEvent(ti, _tracks[ti], 1));
+            _noFill[t].setOnClickListener(v -> SimOnAdFailedEvent(_tracks[ti], 2));
+            _other[t].setOnClickListener(v -> SimOnAdFailedEvent(_tracks[ti], 0));
+            ToggleTrack(t, false, true);
+        }
     }
 
     @Override
@@ -348,27 +375,35 @@ public class InterstitialSim extends TableLayout {
             return true;
         }
         track._state = State.Idle;
-        RetryLoadTracks();
         return false;
     }
 
-    public void RetryLoadTracks() {
-        if (_loadSwitch.isChecked()) {
-            LoadTracks();
-        }
-    }
-
-    public void OnTrackLoad(boolean success) {
-        if (success) {
-            UpdateShowButton();
-        }
-
+    public void OnTrackLoad(Track track, boolean success) {
         _isFirstResponseReceived = true;
-        RetryLoadTracks();
+        if (track._isOptimized) {
+            ContinueOptimized();
+        }
+
+        if (success) {
+            _showButton.setEnabled(true);
+        } else {
+            track._state = State.Delay;
+            int delay = (int)(NeftaPlugin.GetRetryDelayInSeconds(track._insight, track._adUnitId) * 1000);
+            _handler.postDelayed(() -> {
+                track._state = State.Idle;
+                ContinueLoading();
+            }, delay);
+        }
     }
 
-    private void UpdateShowButton() {
-        _showButton.setEnabled(_trackA._state == State.Ready || _trackB._state == State.Ready);
+    private Track GetReadyTrack() {
+        Track bestTrack = null;
+        for (Track t : _tracks) {
+            if (t._state == State.Ready && (bestTrack == null || t._revenue > bestTrack._revenue)) {
+                bestTrack = t;
+            }
+        }
+        return bestTrack;
     }
 
     void Log(String log) {
@@ -409,14 +444,12 @@ public class InterstitialSim extends TableLayout {
 
         @Override
         public void loadAd() {
-            String status = _adUnitId + " loading " + (_floor >= 0 ? " as Optimized" : "as Default");
-
-            if (_trackA._adUnitId.equals(_adUnitId)) {
-                ToggleTrackA(true, true);
-                _aStatus.setText(status);
-            } else {
-                ToggleTrackB(true, true);
-                _bStatus.setText(status);
+            for (int i = 0; i < _tracks.length; i++) {
+                if (_tracks[i]._adUnitId.equals(_adUnitId)) {
+                    ToggleTrack(i, true, true);
+                    _statuses[i].setText("Loading " +_adUnitId + (_floor >= 0 ? " as Optimized" : "as Default"));
+                    break;
+                }
             }
         }
 
@@ -428,12 +461,12 @@ public class InterstitialSim extends TableLayout {
             }
 
             _ad = null;
-            if (_trackA._adUnitId.equals(_adUnitId)) {
-                ToggleTrackA(false, false);
-                _aStatus.setText("Showing A");
-            } else {
-                ToggleTrackB(false, false);
-                _bStatus.setText("Showing B");
+            for (int i = 0; i < _tracks.length; i++) {
+                if (_tracks[i]._adUnitId.equals(_adUnitId)) {
+                    ToggleTrack(i, false, false);
+                    _statuses[i].setText("Showing "+ _adUnitId);
+                    break;
+                }
             }
 
             NDebug.Open("Interstitial", activity,
@@ -484,124 +517,85 @@ public class InterstitialSim extends TableLayout {
         public void destroy() {
             _ad = null;
 
-            if (_trackA._adUnitId.equals(_adUnitId)) {
-                ToggleTrackA(false, true);
-                _aStatus.setText("");
-            } else {
-                ToggleTrackB(false, true);
-                _bStatus.setText("");
+            for (int i = 0; i < _tracks.length; i++) {
+                if (_tracks[i]._adUnitId.equals(_adUnitId)) {
+                    ToggleTrack(i, false, true);
+                    _statuses[i].setText("");
+                    break;
+                }
             }
         }
     }
 
-    private void ToggleTrackA(boolean on, boolean refresh) {
-        _aFill2.setEnabled(on);
-        _aFill1.setEnabled(on);
-        _aNoFill.setEnabled(on);
-        _aOther.setEnabled(on);
+    private void ToggleTrack(int t, boolean on, boolean refresh) {
+        _fill3[t].setEnabled(on);
+        _fill2[t].setEnabled(on);
+        _fill1[t].setEnabled(on);
+        _noFill[t].setEnabled(on);
+        _other[t].setEnabled(on);
 
         if (refresh) {
-            _aFill2.setBackgroundResource(R.drawable.button);
-            _aFill1.setBackgroundResource(R.drawable.button);
-            _aNoFill.setBackgroundResource(R.drawable.button);
-            _aOther.setBackgroundResource(R.drawable.button);
+            _fill3[t].setBackgroundResource(R.drawable.button);
+            _fill2[t].setBackgroundResource(R.drawable.button);
+            _fill1[t].setBackgroundResource(R.drawable.button);
+            _noFill[t].setBackgroundResource(R.drawable.button);
+            _other[t].setBackgroundResource(R.drawable.button);
         }
 
-        _aFill2.refreshDrawableState();
-        _aFill1.refreshDrawableState();
-        _aNoFill.refreshDrawableState();
-        _aOther.refreshDrawableState();
+        _fill3[t].refreshDrawableState();
+        _fill2[t].refreshDrawableState();
+        _fill1[t].refreshDrawableState();
+        _noFill[t].refreshDrawableState();
+        _other[t].refreshDrawableState();
     }
 
-    private void ToggleTrackB(boolean on, boolean refresh) {
-        _bFill2.setEnabled(on);
-        _bFill1.setEnabled(on);
-        _bNoFill.setEnabled(on);
-        _bOther.setEnabled(on);
-
-        if (refresh) {
-            _bFill2.setBackgroundResource(R.drawable.button);
-            _bFill1.setBackgroundResource(R.drawable.button);
-            _bNoFill.setBackgroundResource(R.drawable.button);
-            _bOther.setBackgroundResource(R.drawable.button);
-        }
-
-        _bFill2.refreshDrawableState();
-        _bFill1.refreshDrawableState();
-        _bNoFill.refreshDrawableState();
-        _bOther.refreshDrawableState();
-    }
-
-    private void SimOnAdLoadedEvent(Track track, boolean isHigh) {
-        double revenue = isHigh ? 0.002 : 0.001;
+    private void SimOnAdLoadedEvent(int t, Track track, int r) {
+        double revenue = r == 3 ? 0.003 : r == 2 ? 0.002 : 0.001;
         if (track._interstitial._ad != null) {
             track._interstitial._ad = null;
 
-            if (track == _trackA) {
-                if (isHigh) {
-                    _aFill2.setBackgroundResource(R.drawable.button);
-                    _aFill2.setEnabled(false);
-                } else {
-                    _aFill1.setBackgroundResource(R.drawable.button);
-                    _aFill1.setEnabled(false);
-                }
-            } else {
-                if (isHigh) {
-                    _bFill2.setBackgroundResource(R.drawable.button);
-                    _bFill2.setEnabled(false);
-                } else {
-                    _bFill1.setBackgroundResource(R.drawable.button);
-                    _bFill1.setEnabled(false);
-                }
-            }
+            _fill3[t].setBackgroundResource(R.drawable.button);
+            _fill3[t].setEnabled(false);
+
+            _fill2[t].setBackgroundResource(R.drawable.button);
+            _fill2[t].setEnabled(false);
+
+            _fill1[t].setBackgroundResource(R.drawable.button);
+            _fill1[t].setEnabled(false);
+
             return;
         }
 
         MaxAd ad = new SMaxAd(track._adUnitId, MaxAdFormat.INTERSTITIAL, revenue,
                 new MaxNetworkResponseInfo.AdLoadState[] { MaxNetworkResponseInfo.AdLoadState.AD_LOADED, MaxNetworkResponseInfo.AdLoadState.AD_LOAD_NOT_ATTEMPTED });
 
-        if (track == _trackA) {
-            ToggleTrackA(false, false);
-            if (isHigh) {
-                _aFill2.setBackgroundResource(R.drawable.button_fill);
-                _aFill2.setEnabled(true);
-            } else {
-                _aFill1.setBackgroundResource(R.drawable.button_fill);
-                _aFill1.setEnabled(true);
-            }
-            _aStatus.setText(track._adUnitId + " loaded " + revenue);
-        } else {
-            ToggleTrackB(false, false);
-            if (isHigh) {
-                _bFill2.setBackgroundResource(R.drawable.button_fill);
-                _bFill2.setEnabled(true);
-            } else {
-                _bFill1.setBackgroundResource(R.drawable.button_fill);
-                _bFill1.setEnabled(true);
-            }
-            _bStatus.setText(track._adUnitId + " loaded " + revenue);
+        ToggleTrack(t, false, false);
+        if (r == 3) {
+            _fill3[t].setBackgroundResource(R.drawable.button_fill);
+            _fill3[t].setEnabled(true);
+        } else if (r == 2) {
+            _fill2[t].setBackgroundResource(R.drawable.button_fill);
+            _fill2[t].setEnabled(true);
+        } else if (r == 1) {
+            _fill1[t].setBackgroundResource(R.drawable.button_fill);
+            _fill1[t].setEnabled(true);
         }
+        _statuses[t].setText(track._adUnitId + " loaded " + revenue);
 
         track._interstitial.SimLoad(ad);
     }
 
     private void SimOnAdFailedEvent(Track track, int status) {
-        if (track == _trackA) {
-            if (status == 2) {
-                _aNoFill.setBackgroundResource(R.drawable.button_no);
-            } else {
-                _aOther.setBackgroundResource(R.drawable.button_no);
+        for (int t = 0; t < _tracks.length; t++) {
+            if (_tracks[t] == track) {
+                if (status == 2) {
+                    _noFill[t].setBackgroundResource(R.drawable.button_no);
+                } else {
+                    _other[t].setBackgroundResource(R.drawable.button_no);
+                }
+                ToggleTrack(t, false, false);
+                _statuses[t].setText(track._adUnitId + " failed");
             }
-            ToggleTrackA(false, false);
-            _aStatus.setText(track._adUnitId + " failed");
-        } else {
-            if (status == 2) {
-                _bNoFill.setBackgroundResource(R.drawable.button_no);
-            } else {
-                _bOther.setBackgroundResource(R.drawable.button_no);
-            }
-            _bStatus.setText(track._adUnitId + " failed");
-            ToggleTrackB(false, false);
         }
 
         MaxError error = new MaxError() {
