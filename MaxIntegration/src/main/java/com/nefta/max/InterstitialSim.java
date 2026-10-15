@@ -13,7 +13,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Switch;
-import android.widget.TableLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -112,7 +111,6 @@ public class InterstitialSim extends LinearLayout {
             Log("onAdHidden "+ ad.getAdUnitId());
 
             _state = State.Idle;
-
             ContinueLoading();
         }
 
@@ -121,15 +119,14 @@ public class InterstitialSim extends LinearLayout {
             Log("onAdDisplayFailed "+ ad.getAdUnitId());
 
             _state = State.Idle;
-
             ContinueLoading();
         }
     }
 
     private Track[] _tracks;
     private boolean _isFirstRequest = true;
-    private boolean _isFirstResponseReceived = false;
-    private boolean _isGlobalCooldown;
+    private boolean _isFirstOptimizedResponseReceived = false;
+    private int _isGlobalCooldown;
 
     private Activity _activity;
     private Switch _loadSwitch;
@@ -166,36 +163,37 @@ public class InterstitialSim extends LinearLayout {
     }
 
     private void Load() {
-        if (!_isFirstRequest) {
-            return;
-        }
-        if (!_isOptimized) {
-            Load(_tracks[0]);
-            return;
-        }
-        Load(_tracks[1]);
+        if (_isFirstRequest && _isOptimized) {
+            Load(_tracks[1]);
 
-        int stopWaitingForFirstResponseAfter = NeftaPlugin._instance._state._firstResponseTimeoutInterstitialInMs;
-        if (_isFirstRequest && stopWaitingForFirstResponseAfter > 0) {
-            _isFirstRequest = false;
-
-            _handler.postDelayed(() -> {
-                if (!_isFirstResponseReceived) {
-                    _isFirstResponseReceived = true;
-                    if (_tracks[2]._state == State.Idle) {
-                        Load(_tracks[2]);
+            int stopWaitingForFirstResponseAfter = NeftaPlugin._instance._state._firstResponseTimeoutInterstitialInMs;
+            if (stopWaitingForFirstResponseAfter > 0) {
+                _handler.postDelayed(() -> {
+                    if (!_isFirstOptimizedResponseReceived) {
+                        _isFirstOptimizedResponseReceived = true;
+                        if (_tracks.length > 2 && _tracks[2]._state == State.Idle) {
+                            Load(_tracks[2]);
+                        }
+                        if (NeftaPlugin._instance._state._backfillTrackDelayInMs < 0 && _tracks[0]._state == State.Idle) {
+                            Load(_tracks[0]);
+                        }
                     }
-                }
-            }, stopWaitingForFirstResponseAfter);
-        }
+                }, stopWaitingForFirstResponseAfter);
+            }
 
-        int backFillTrackDelayInMs = NeftaPlugin._instance._state._backfillTrackDelayInMs;
-        if (backFillTrackDelayInMs == 0) {
-            Load(_tracks[0]);
-        } else if (backFillTrackDelayInMs > 0) {
-            _handler.postDelayed(() -> {
+            int backFillTrackDelayInMs = NeftaPlugin._instance._state._backfillTrackDelayInMs;
+            if (backFillTrackDelayInMs == 0) {
                 Load(_tracks[0]);
-            }, backFillTrackDelayInMs);
+            } else if (backFillTrackDelayInMs > 0) {
+                _tracks[0]._state = State.Delay;
+                _handler.postDelayed(() -> {
+                    Load(_tracks[0]);
+                }, backFillTrackDelayInMs);
+            }
+
+            _isFirstRequest = false;
+        } else {
+            ContinueLoading();
         }
     }
 
@@ -212,7 +210,6 @@ public class InterstitialSim extends LinearLayout {
                         bidFloor = String.format(Locale.ROOT, "%.10f", track._insight._floorPrice);
                     }
 
-                    track._interstitial.setExtraParameter("disable_auto_retries", "true");
                     track._interstitial.setExtraParameter("jC7Fp", bidFloor);
 
                     NeftaMediationAdapter.OnExternalMediationRequest(track._interstitial, track._insight);
@@ -235,14 +232,18 @@ public class InterstitialSim extends LinearLayout {
     }
 
     public void ContinueOptimized() {
+        _isFirstOptimizedResponseReceived = true;
         if (_tracks[0]._state == State.Idle) {
             Load(_tracks[0]);
         }
 
-        _isGlobalCooldown = true;
+        _isGlobalCooldown++;
         _handler.postDelayed(() -> {
-            _isGlobalCooldown = false;
-            ContinueLoading();
+            _isGlobalCooldown--;
+            if (_isGlobalCooldown <= 0) {
+                _isGlobalCooldown = 0;
+                ContinueLoading();
+            }
         }, NeftaPlugin._instance._state._globalTrackCooldownInMs);
     }
 
@@ -254,7 +255,7 @@ public class InterstitialSim extends LinearLayout {
         if (_tracks[0]._state == State.Idle) {
             Load(_tracks[0]);
         }
-        if (_isGlobalCooldown || !_isOptimized) {
+        if (_isGlobalCooldown > 0 || !_isOptimized) {
             return;
         }
         for (int i = 1; i < _tracks.length; i++) {
@@ -379,11 +380,6 @@ public class InterstitialSim extends LinearLayout {
     }
 
     public void OnTrackLoad(Track track, boolean success) {
-        _isFirstResponseReceived = true;
-        if (track._isOptimized) {
-            ContinueOptimized();
-        }
-
         if (success) {
             _showButton.setEnabled(true);
         } else {
@@ -393,6 +389,10 @@ public class InterstitialSim extends LinearLayout {
                 track._state = State.Idle;
                 ContinueLoading();
             }, delay);
+        }
+
+        if (track._isOptimized) {
+            ContinueOptimized();
         }
     }
 

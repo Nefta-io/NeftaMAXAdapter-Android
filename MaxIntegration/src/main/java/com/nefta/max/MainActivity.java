@@ -20,7 +20,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
-    private String[] _dynamicAdUnits = new String[] {
+    private final String[] _dynamicAdUnits = new String[] {
         Interstitial.AdUnitOptimizedA, Interstitial.AdUnitOptimizedA,
         Rewarded.AdUnitOptimizedA, Rewarded.AdUnitOptimizedB
     };
@@ -84,6 +84,12 @@ public class MainActivity extends AppCompatActivity {
         title.setText("MAX Integration "+ AppLovinSdk.VERSION);
 
         _consentCheckBox = findViewById(R.id.hasConsent);
+        _consentCheckBox.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                NeftaPlugin.SetHasUserConsent(_consentCheckBox.isChecked());
+            }
+        });
 
         findViewById(R.id.unknown).setOnClickListener(new View.OnClickListener() {
             @Override
