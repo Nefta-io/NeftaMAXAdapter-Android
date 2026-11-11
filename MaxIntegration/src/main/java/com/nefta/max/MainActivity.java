@@ -123,8 +123,7 @@ public class MainActivity extends AppCompatActivity {
         _consentCheckBox.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                NeftaPlugin.SetHasUserConsent(false);
-                _consentCheckBox.setEnabled(false);
+                NeftaPlugin.SetHasUserConsent(_consentCheckBox.isChecked());
             }
         });
 
