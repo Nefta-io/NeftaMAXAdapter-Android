@@ -53,6 +53,12 @@
                     android:layout_margin="20dp"
                     android:checked="true"
                     android:text="Is Simulator" />
+
+                <Button
+                    android:id="@+id/misc"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="MISC" />
             </LinearLayout>
 
             <LinearLayout

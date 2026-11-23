@@ -163,14 +163,14 @@ public class RewardedSim extends LinearLayout {
                         if (_tracks.length > 2 && _tracks[2]._state == State.Idle) {
                             Load(_tracks[2]);
                         }
-                        if (NeftaPlugin._instance._state._backfillTrackDelayInMs < 0 && _tracks[0]._state == State.Idle) {
+                        if (NeftaPlugin._instance._state._backfillRewardedDelayInMs < 0 && _tracks[0]._state == State.Idle) {
                             Load(_tracks[0]);
                         }
                     }
                 }, stopWaitingForFirstResponseAfter);
             }
 
-            int backFillTrackDelayInMs = NeftaPlugin._instance._state._backfillTrackDelayInMs;
+            int backFillTrackDelayInMs = NeftaPlugin._instance._state._backfillRewardedDelayInMs;
             if (backFillTrackDelayInMs == 0) {
                 Load(_tracks[0]);
             } else if (backFillTrackDelayInMs > 0) {
@@ -190,19 +190,13 @@ public class RewardedSim extends LinearLayout {
         if (track._isOptimized) {
             NeftaPlugin._instance.GetInsights(Insights.REWARDED, track._insight, (Insights insights) -> {
                 Log("LoadWithInsights: " + insights);
-                if (insights._rewarded != null) {
-                    track._insight = insights._rewarded;
-                    String bidFloor = "";
-                    if (track._insight._floorPrice >= 0) {
-                        bidFloor = String.format(Locale.ROOT, "%.10f", track._insight._floorPrice);
+                if (insights._insight != null) {
+                    LoadOptimizedTrack(track, insights._insight);
+
+                    if (track == _tracks[1] && _tracks.length > 2 && _tracks[2]._state == State.Idle && insights._insightB != null) {
+                        _tracks[2]._state = State.Loading;
+                        LoadOptimizedTrack(_tracks[2], insights._insightB);
                     }
-
-                    track._rewarded.setExtraParameter("jC7Fp", bidFloor);
-
-                    NeftaMediationAdapter.OnExternalMediationRequest(track._rewarded._instance, track._insight);
-
-                    Log("Loading " + track._adUnitId + " as Optimized with floor: " + bidFloor);
-                    track._rewarded.loadAd();
                 } else {
                     _handler.postDelayed(() -> {
                         track._state = State.Idle;
@@ -216,6 +210,21 @@ public class RewardedSim extends LinearLayout {
             Log("Loading "+ track._adUnitId + " as Default");
             track._rewarded.loadAd();
         }
+    }
+
+    private void LoadOptimizedTrack(Track track, AdInsight insight) {
+        track._insight = insight;
+        String bidFloor = "";
+        if (track._insight._floorPrice >= 0) {
+            bidFloor = String.format(Locale.ROOT, "%.10f", track._insight._floorPrice);
+        }
+
+        track._rewarded.setExtraParameter("jC7Fp", bidFloor);
+
+        NeftaMediationAdapter.OnExternalMediationRequest(track._rewarded._instance, track._insight);
+
+        Log("Loading " + track._adUnitId + " as Optimized with floor: " + bidFloor);
+        track._rewarded.loadAd();
     }
 
     public void ContinueOptimized() {
@@ -292,16 +301,17 @@ public class RewardedSim extends LinearLayout {
             Load();
         });
         _showButton.setOnClickListener(view -> {
-            boolean isShown = false;
             Track readyTrack = GetReadyTrack();
-            if (readyTrack != null) {
-                isShown = TryShow(readyTrack);
-            }
-            if (!isShown) {
-                ContinueLoading();
+            while (readyTrack != null) {
+                boolean isShown = TryShow(readyTrack);
+                readyTrack = null;
+                if (!isShown) {
+                    readyTrack = GetReadyTrack();
+                }
             }
             readyTrack = GetReadyTrack();
             _showButton.setEnabled(readyTrack != null);
+            ContinueLoading();
         });
         _showButton.setEnabled(false);
 
@@ -547,13 +557,13 @@ public class RewardedSim extends LinearLayout {
         if (track._rewarded._ad != null) {
             track._rewarded._ad = null;
 
-            _fill3[t].setBackgroundResource(R.drawable.button);
+            _fill3[t].setBackgroundResource(r == 3 ? R.drawable.button_invalid : R.drawable.button);
             _fill3[t].setEnabled(false);
 
-            _fill2[t].setBackgroundResource(R.drawable.button);
+            _fill2[t].setBackgroundResource(r == 2 ? R.drawable.button_invalid : R.drawable.button);
             _fill2[t].setEnabled(false);
 
-            _fill1[t].setBackgroundResource(R.drawable.button);
+            _fill1[t].setBackgroundResource(r == 1 ? R.drawable.button_invalid : R.drawable.button);
             _fill1[t].setEnabled(false);
 
             return;
