@@ -29,18 +29,18 @@ public class InterstitialOptimized implements Interstitial {
 
     private class Track implements MaxAdListener, MaxAdRevenueListener {
         public final String _adUnitId;
-        public final boolean _isOptimized;
+        public final int _index;
         public MaxInterstitialAd _interstitial;
         public State _state = State.Idle;
         public AdInsight _insight;
         public double _revenue;
 
-        public Track(String adUnit, boolean isOptimized) {
+        public Track(String adUnit, int index) {
             _adUnitId = adUnit;
-            _isOptimized = isOptimized;
+            _index = index;
 
             _interstitial = new MaxInterstitialAd(_adUnitId);
-            if (_isOptimized) {
+            if (index != 0) {
                 _interstitial.setExtraParameter("disable_auto_retries", "true");
             }
             _interstitial.setListener(this);
@@ -118,9 +118,9 @@ public class InterstitialOptimized implements Interstitial {
         _handler = new Handler(Looper.getMainLooper());
 
         _tracks = new Track[] {
-            new Track(Interstitial.AdUnitDefault, false),
-            new Track(Interstitial.AdUnitOptimizedA, true),
-            new Track(Interstitial.AdUnitOptimizedB, true)
+            new Track(Interstitial.AdUnitDefault, 0),
+            new Track(Interstitial.AdUnitOptimizedA, 1),
+            new Track(Interstitial.AdUnitOptimizedB, 2)
         };
     }
 
@@ -148,7 +148,11 @@ public class InterstitialOptimized implements Interstitial {
                 Load(_tracks[0]);
             } else if (backFillTrackDelayInMs > 0) {
                 _tracks[0]._state = State.Delay;
-                _handler.postDelayed(() -> Load(_tracks[0]), backFillTrackDelayInMs);
+                _handler.postDelayed(() -> {
+                    if (_tracks[0]._state == State.Delay) {
+                        Load(_tracks[0]);
+                    }
+                }, backFillTrackDelayInMs);
             }
 
             _isFirstRequest = false;
@@ -159,39 +163,43 @@ public class InterstitialOptimized implements Interstitial {
 
     private void Load(Track track) {
         track._state = State.Loading;
-
-        if (track._isOptimized) {
-            NeftaMediationAdapter.GetInsights(Insights.INTERSTITIAL, track._insight, (Insights insights) -> {
-                Log("LoadWithInsights: " + insights);
-                if (insights._insight != null) {
-                    LoadOptimizedTrack(track, insights._insight);
-
-                    if (track == _tracks[1] && _tracks.length > 2 && _tracks[2]._state == State.Idle && insights._insightB != null) {
-                        _tracks[2]._state = State.Loading;
+        NeftaMediationAdapter.GetInsights(Insights.INTERSTITIAL, track._index, track._insight, (Insights insights) -> {
+            Log("LoadWithInsights: " + insights);
+            if (insights._insight != null) {
+                LoadOptimizedTrack(track, insights._insight);
+                if (track._index == 1) {
+                    if (_tracks.length > 2 && _tracks[2]._state == State.Idle && insights._insightB != null) {
                         LoadOptimizedTrack(_tracks[2], insights._insightB);
                     }
+                    if ((_tracks[0]._state == State.Idle || _tracks[0]._state == State.Delay) && insights._insightC != null) {
+                        LoadOptimizedTrack(_tracks[0], insights._insightC);
+                    }
+                }
+            } else {
+                if (track._index == 0) {
+                    track._interstitial.setExtraParameter("jC7Fp", "");
+                    NeftaMediationAdapter.OnExternalMediationRequest(track._interstitial);
+
+                    Log("Loading "+ track._adUnitId + " as Default");
+                    track._interstitial.loadAd();
                 } else {
+                    track._state = State.Delay;
                     _handler.postDelayed(() -> {
                         track._state = State.Idle;
                         ContinueLoading();
                     }, (int)(NeftaPlugin.GetRetryDelayInSeconds(track._insight, track._adUnitId) * 1000));
                 }
-            });
-        } else {
-            NeftaMediationAdapter.OnExternalMediationRequest(track._interstitial);
-
-            Log("Loading "+ track._adUnitId + " as Default");
-            track._interstitial.loadAd();
-        }
+            }
+        });
     }
 
     private void LoadOptimizedTrack(Track track, AdInsight insight) {
+        track._state = State.Loading;
         track._insight = insight;
         String bidFloor = "";
         if (track._insight._floorPrice >= 0) {
             bidFloor = String.format(Locale.ROOT, "%.10f", track._insight._floorPrice);
         }
-
         track._interstitial.setExtraParameter("jC7Fp", bidFloor);
 
         NeftaMediationAdapter.OnExternalMediationRequest(track._interstitial, track._insight);
@@ -277,7 +285,7 @@ public class InterstitialOptimized implements Interstitial {
             }, delay);
         }
 
-        if (track._isOptimized) {
+        if (track._index != 0) {
             ContinueOptimized();
         }
     }

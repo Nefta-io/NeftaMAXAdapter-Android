@@ -48,15 +48,15 @@ public class RewardedSim extends LinearLayout {
 
     private class Track implements MaxRewardedAdListener, MaxAdRevenueListener {
         public final String _adUnitId;
-        public final boolean _isOptimized;
+        public final int _index;
         public SimRewarded _rewarded;
         public State _state = State.Idle;
         public AdInsight _insight;
         public double _revenue;
 
-        public Track(String adUnit, boolean isOptimized) {
+        public Track(String adUnit, int index) {
             _adUnitId = adUnit;
-            _isOptimized = isOptimized;
+            _index = index;
 
             _rewarded = new SimRewarded(_adUnitId);
             _rewarded.setListener(this);
@@ -175,7 +175,11 @@ public class RewardedSim extends LinearLayout {
                 Load(_tracks[0]);
             } else if (backFillTrackDelayInMs > 0) {
                 _tracks[0]._state = State.Delay;
-                _handler.postDelayed(() -> Load(_tracks[0]), backFillTrackDelayInMs);
+                _handler.postDelayed(() -> {
+                    if (_tracks[0]._state == State.Delay) {
+                        Load(_tracks[0]);
+                    }
+                }, backFillTrackDelayInMs);
             }
 
             _isFirstRequest = false;
@@ -186,33 +190,38 @@ public class RewardedSim extends LinearLayout {
 
     private void Load(Track track) {
         track._state = State.Loading;
-
-        if (track._isOptimized) {
-            NeftaPlugin._instance.GetInsights(Insights.REWARDED, track._insight, (Insights insights) -> {
-                Log("LoadWithInsights: " + insights);
-                if (insights._insight != null) {
-                    LoadOptimizedTrack(track, insights._insight);
-
-                    if (track == _tracks[1] && _tracks.length > 2 && _tracks[2]._state == State.Idle && insights._insightB != null) {
-                        _tracks[2]._state = State.Loading;
+        if (!_isOptimized && track == _tracks[0]) {
+            LoadAsDefault(track);
+            return;
+        }
+        NeftaPlugin._instance.GetInsights(Insights.REWARDED, track._index, track._insight, (Insights insights) -> {
+            Log("LoadWithInsights: " + insights);
+            if (insights._insight != null) {
+                LoadOptimizedTrack(track, insights._insight);
+                if (track == _tracks[1]) {
+                    if (_tracks.length > 2 && _tracks[2]._state == State.Idle && insights._insightB != null) {
                         LoadOptimizedTrack(_tracks[2], insights._insightB);
                     }
+                    if ((_tracks[0]._state == State.Idle || _tracks[0]._state == State.Delay) && insights._insightC != null) {
+                        LoadOptimizedTrack(_tracks[0], insights._insightC);
+                    }
+                }
+            } else {
+                if (track._index == 0) {
+                    LoadAsDefault(track);
                 } else {
+                    track._state = State.Delay;
                     _handler.postDelayed(() -> {
                         track._state = State.Idle;
                         ContinueLoading();
-                    }, (int)(NeftaPlugin.GetRetryDelayInSeconds(track._insight, track._adUnitId) * 1000));
+                    }, (int) (NeftaPlugin.GetRetryDelayInSeconds(track._insight, track._adUnitId) * 1000));
                 }
-            });
-        } else {
-            NeftaMediationAdapter.OnExternalMediationRequest(track._rewarded._instance);
-
-            Log("Loading "+ track._adUnitId + " as Default");
-            track._rewarded.loadAd();
-        }
+            }
+        });
     }
 
     private void LoadOptimizedTrack(Track track, AdInsight insight) {
+        track._state = State.Loading;
         track._insight = insight;
         String bidFloor = "";
         if (track._insight._floorPrice >= 0) {
@@ -224,6 +233,14 @@ public class RewardedSim extends LinearLayout {
         NeftaMediationAdapter.OnExternalMediationRequest(track._rewarded._instance, track._insight);
 
         Log("Loading " + track._adUnitId + " as Optimized with floor: " + bidFloor);
+        track._rewarded.loadAd();
+    }
+
+    private void LoadAsDefault(Track track) {
+        track._rewarded.setExtraParameter("jC7Fp", "");
+        NeftaMediationAdapter.OnExternalMediationRequest(track._rewarded._instance);
+
+        Log("Loading "+ track._adUnitId + " as Default");
         track._rewarded.loadAd();
     }
 
@@ -292,9 +309,9 @@ public class RewardedSim extends LinearLayout {
         _handler = new Handler(Looper.getMainLooper());
 
         _tracks = new Track[] {
-            new Track("Rewarded Track D", false),
-            new Track("Rewarded Track A", true),
-            new Track("Rewarded Track B", true)
+            new Track("Rewarded Track C", 0),
+            new Track("Rewarded Track A", 1),
+            new Track("Rewarded Track B", 2)
         };
 
         _loadSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -316,32 +333,32 @@ public class RewardedSim extends LinearLayout {
         _showButton.setEnabled(false);
 
         _statuses = new TextView[] {
-            findViewById(R.id.rewardedSim_statusD),
+            findViewById(R.id.rewardedSim_statusC),
             findViewById(R.id.rewardedSim_statusA),
             findViewById(R.id.rewardedSim_statusB)
         };
         _fill3 = new Button[] {
-            findViewById(R.id.rewardedSim_fill3D),
+            findViewById(R.id.rewardedSim_fill3C),
             findViewById(R.id.rewardedSim_fill3A),
             findViewById(R.id.rewardedSim_fill3B)
         };
         _fill2 = new Button[] {
-            findViewById(R.id.rewardedSim_fill2D),
+            findViewById(R.id.rewardedSim_fill2C),
             findViewById(R.id.rewardedSim_fill2A),
             findViewById(R.id.rewardedSim_fill2B)
         };
         _fill1 = new Button[] {
-            findViewById(R.id.rewardedSim_fill1D),
+            findViewById(R.id.rewardedSim_fill1C),
             findViewById(R.id.rewardedSim_fill1A),
             findViewById(R.id.rewardedSim_fill1B)
         };
         _noFill = new Button[] {
-            findViewById(R.id.rewardedSim_noFillD),
+            findViewById(R.id.rewardedSim_noFillC),
             findViewById(R.id.rewardedSim_noFillA),
             findViewById(R.id.rewardedSim_noFillB)
         };
         _other = new Button[] {
-            findViewById(R.id.rewardedSim_OtherD),
+            findViewById(R.id.rewardedSim_OtherC),
             findViewById(R.id.rewardedSim_OtherA),
             findViewById(R.id.rewardedSim_OtherB)
         };
@@ -388,7 +405,7 @@ public class RewardedSim extends LinearLayout {
             }, delay);
         }
 
-        if (track._isOptimized) {
+        if (track._index != 0) {
             ContinueOptimized();
         }
     }

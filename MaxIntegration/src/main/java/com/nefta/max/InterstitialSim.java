@@ -50,15 +50,15 @@ public class InterstitialSim extends LinearLayout {
 
     private class Track implements MaxAdListener, MaxAdRevenueListener {
         public final String _adUnitId;
-        public final boolean _isOptimized;
+        public final int _index;
         public SimInterstitial _interstitial;
         public State _state = State.Idle;
         public AdInsight _insight;
         public double _revenue;
 
-        public Track(String adUnit, boolean isOptimized) {
+        public Track(String adUnit, int index) {
             _adUnitId = adUnit;
-            _isOptimized = isOptimized;
+            _index = index;
 
             _interstitial = new SimInterstitial(_adUnitId);
             _interstitial.setListener(this);
@@ -187,7 +187,9 @@ public class InterstitialSim extends LinearLayout {
             } else if (backFillTrackDelayInMs > 0) {
                 _tracks[0]._state = State.Delay;
                 _handler.postDelayed(() -> {
-                    Load(_tracks[0]);
+                    if (_tracks[0]._state == State.Delay) {
+                        Load(_tracks[0]);
+                    }
                 }, backFillTrackDelayInMs);
             }
 
@@ -199,33 +201,38 @@ public class InterstitialSim extends LinearLayout {
 
     private void Load(Track track) {
         track._state = State.Loading;
-
-        if (track._isOptimized) {
-            NeftaPlugin._instance.GetInsights(Insights.INTERSTITIAL, track._insight, (Insights insights) -> {
-                Log("LoadWithInsights: " + insights);
-                if (insights._insight != null) {
-                    LoadOptimizedTrack(track, insights._insight);
-
-                    if (track == _tracks[1] && _tracks.length > 2 && _tracks[2]._state == State.Idle && insights._insightB != null) {
-                        _tracks[2]._state = State.Loading;
+        if (!_isOptimized && track == _tracks[0]) {
+            LoadAsDefault(track);
+            return;
+        }
+        NeftaPlugin._instance.GetInsights(Insights.INTERSTITIAL, track._index, track._insight, (Insights insights) -> {
+            Log("LoadWithInsights: " + insights);
+            if (insights._insight != null) {
+                LoadOptimizedTrack(track, insights._insight);
+                if (track._index == 1) {
+                    if (_tracks.length > 2 && _tracks[2]._state == State.Idle && insights._insightB != null) {
                         LoadOptimizedTrack(_tracks[2], insights._insightB);
                     }
+                    if ((_tracks[0]._state == State.Idle || _tracks[0]._state == State.Delay) && insights._insightC != null) {
+                        LoadOptimizedTrack(_tracks[0], insights._insightC);
+                    }
+                }
+            } else {
+                if (track._index == 0) {
+                    LoadAsDefault(track);
                 } else {
+                    track._state = State.Delay;
                     _handler.postDelayed(() -> {
                         track._state = State.Idle;
                         ContinueLoading();
                     }, (int)(NeftaPlugin.GetRetryDelayInSeconds(track._insight, track._adUnitId) * 1000));
                 }
-            });
-        } else {
-            NeftaMediationAdapter.OnExternalMediationRequest(track._interstitial);
-
-            Log("Loading "+ track._adUnitId + " as Default");
-            track._interstitial.loadAd();
-        }
+            }
+        });
     }
 
     private void LoadOptimizedTrack(Track track, AdInsight insight) {
+        track._state = State.Loading;
         track._insight = insight;
         String bidFloor = "";
         if (track._insight._floorPrice >= 0) {
@@ -237,6 +244,14 @@ public class InterstitialSim extends LinearLayout {
         NeftaMediationAdapter.OnExternalMediationRequest(track._interstitial, track._insight);
 
         Log("Loading " + track._adUnitId + " as Optimized with floor: " + bidFloor);
+        track._interstitial.loadAd();
+    }
+
+    private void LoadAsDefault(Track track) {
+        track._interstitial.setExtraParameter("jC7Fp", "");
+        NeftaMediationAdapter.OnExternalMediationRequest(track._interstitial);
+
+        Log("Loading "+ track._adUnitId + " as Default");
         track._interstitial.loadAd();
     }
 
@@ -305,9 +320,9 @@ public class InterstitialSim extends LinearLayout {
         _handler = new Handler(Looper.getMainLooper());
 
         _tracks = new Track[] {
-            new Track("Inter Track D", false),
-            new Track("Inter Track A", true),
-            new Track("Inter Track B", true)
+            new Track("Inter Track C", 0),
+            new Track("Inter Track A", 1),
+            new Track("Inter Track B", 2)
         };
 
         _loadSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -329,32 +344,32 @@ public class InterstitialSim extends LinearLayout {
         _showButton.setEnabled(false);
 
         _statuses = new TextView[] {
-            findViewById(R.id.interstitialSim_statusD),
+            findViewById(R.id.interstitialSim_statusC),
             findViewById(R.id.interstitialSim_statusA),
             findViewById(R.id.interstitialSim_statusB)
         };
         _fill3 = new Button[] {
-            findViewById(R.id.interstitialSim_fill3D),
+            findViewById(R.id.interstitialSim_fill3C),
             findViewById(R.id.interstitialSim_fill3A),
             findViewById(R.id.interstitialSim_fill3B)
         };
         _fill2 = new Button[] {
-            findViewById(R.id.interstitialSim_fill2D),
+            findViewById(R.id.interstitialSim_fill2C),
             findViewById(R.id.interstitialSim_fill2A),
             findViewById(R.id.interstitialSim_fill2B)
         };
         _fill1 = new Button[] {
-            findViewById(R.id.interstitialSim_fill1D),
+            findViewById(R.id.interstitialSim_fill1C),
             findViewById(R.id.interstitialSim_fill1A),
             findViewById(R.id.interstitialSim_fill1B)
         };
         _noFill = new Button[] {
-            findViewById(R.id.interstitialSim_noFillD),
+            findViewById(R.id.interstitialSim_noFillC),
             findViewById(R.id.interstitialSim_noFillA),
             findViewById(R.id.interstitialSim_noFillB)
         };
         _other = new Button[] {
-            findViewById(R.id.interstitialSim_OtherD),
+            findViewById(R.id.interstitialSim_OtherC),
             findViewById(R.id.interstitialSim_OtherA),
             findViewById(R.id.interstitialSim_OtherB)
         };
@@ -401,7 +416,7 @@ public class InterstitialSim extends LinearLayout {
             }, delay);
         }
 
-        if (track._isOptimized) {
+        if (track._index != 0) {
             ContinueOptimized();
         }
     }

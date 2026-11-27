@@ -30,18 +30,18 @@ public class RewardedOptimized implements Rewarded {
 
     private class Track implements MaxRewardedAdListener, MaxAdRevenueListener {
         public final String _adUnitId;
-        public final boolean _isOptimized;
+        public final int _index;
         public MaxRewardedAd _rewarded;
         public State _state = State.Idle;
         public AdInsight _insight;
         public double _revenue;
 
-        public Track(String adUnit, boolean isOptimized) {
+        public Track(String adUnit, int index) {
             _adUnitId = adUnit;
-            _isOptimized = isOptimized;
+            _index = index;
 
             _rewarded = MaxRewardedAd.getInstance(_adUnitId);
-            if (_isOptimized) {
+            if (_index != 0) {
                 _rewarded.setExtraParameter("disable_auto_retries", "true");
             }
             _rewarded.setListener(this);
@@ -124,9 +124,9 @@ public class RewardedOptimized implements Rewarded {
         _handler = new Handler(Looper.getMainLooper());
 
         _tracks = new Track[] {
-            new Track(Rewarded.AdUnitDefault, false),
-            new Track(Rewarded.AdUnitOptimizedA, true),
-            new Track(Rewarded.AdUnitOptimizedB, true)
+            new Track(Rewarded.AdUnitDefault, 0),
+            new Track(Rewarded.AdUnitOptimizedA, 1),
+            new Track(Rewarded.AdUnitOptimizedB, 2)
         };
     }
 
@@ -154,7 +154,11 @@ public class RewardedOptimized implements Rewarded {
                 Load(_tracks[0]);
             } else if (backFillTrackDelayInMs > 0) {
                 _tracks[0]._state = State.Delay;
-                _handler.postDelayed(() -> Load(_tracks[0]), backFillTrackDelayInMs);
+                _handler.postDelayed(() -> {
+                    if (_tracks[0]._state == State.Delay) {
+                        Load(_tracks[0]);
+                    }
+                }, backFillTrackDelayInMs);
             }
 
             _isFirstRequest = false;
@@ -165,40 +169,43 @@ public class RewardedOptimized implements Rewarded {
 
     private void Load(Track track) {
         track._state = State.Loading;
-
-        if (track._isOptimized) {
-            NeftaMediationAdapter.GetInsights(Insights.REWARDED, track._insight, (Insights insights) -> {
-                Log("LoadWithInsights: " + insights);
-                if (insights._insight != null) {
-                    LoadOptimizedTrack(track, insights._insight);
-
-                    if (track == _tracks[1] && _tracks.length > 2 && _tracks[2]._state == State.Idle && insights._insightB != null) {
-                        _tracks[2]._state = State.Loading;
+        NeftaMediationAdapter.GetInsights(Insights.REWARDED, track._index, track._insight, (Insights insights) -> {
+            Log("LoadWithInsights: " + insights);
+            if (insights._insight != null) {
+                LoadOptimizedTrack(track, insights._insight);
+                if (track._index == 1) {
+                    if (_tracks.length > 2 && _tracks[2]._state == State.Idle && insights._insightB != null) {
                         LoadOptimizedTrack(_tracks[2], insights._insightB);
                     }
+                    if ((_tracks[0]._state == State.Idle || _tracks[0]._state == State.Delay) && insights._insightC != null) {
+                        LoadOptimizedTrack(_tracks[0], insights._insightC);
+                    }
+                }
+            } else {
+                if (track._index == 0) {
+                    track._rewarded.setExtraParameter("jC7Fp", "");
+                    NeftaMediationAdapter.OnExternalMediationRequest(track._rewarded);
+
+                    Log("Loading "+ track._adUnitId + " as Default");
+                    track._rewarded.loadAd();
                 } else {
+                    track._state = State.Delay;
                     _handler.postDelayed(() -> {
                         track._state = State.Idle;
                         ContinueLoading();
-                    }, (int)(NeftaPlugin.GetRetryDelayInSeconds(track._insight, track._adUnitId) * 1000));
+                    }, (int) (NeftaPlugin.GetRetryDelayInSeconds(track._insight, track._adUnitId) * 1000));
                 }
-            });
-        } else {
-            NeftaMediationAdapter.OnExternalMediationRequest(track._rewarded);
-
-            Log("Loading "+ track._adUnitId + " as Default");
-
-            track._rewarded.loadAd();
-        }
+            }
+        });
     }
 
     private void LoadOptimizedTrack(Track track, AdInsight insight) {
+        track._state = State.Loading;
         track._insight = insight;
         String bidFloor = "";
         if (track._insight._floorPrice >= 0) {
             bidFloor = String.format(Locale.ROOT, "%.10f", track._insight._floorPrice);
         }
-
         track._rewarded.setExtraParameter("jC7Fp", bidFloor);
 
         NeftaMediationAdapter.OnExternalMediationRequest(track._rewarded, track._insight);
@@ -284,7 +291,7 @@ public class RewardedOptimized implements Rewarded {
             }, delay);
         }
 
-        if (track._isOptimized) {
+        if (track._index != 0) {
             ContinueOptimized();
         }
     }

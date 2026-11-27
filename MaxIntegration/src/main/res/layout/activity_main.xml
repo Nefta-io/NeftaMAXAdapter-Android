@@ -328,11 +328,11 @@
                 </LinearLayout>
 
                 <TextView
-                    android:id="@+id/interstitialSim_statusD"
+                    android:id="@+id/interstitialSim_statusC"
                     android:layout_width="wrap_content"
                     android:layout_height="30dp"
                     android:singleLine="false"
-                    android:text="D"
+                    android:text="C"
                     android:textAlignment="center"
                     android:textColor="#000000" />
 
@@ -342,7 +342,7 @@
                     android:orientation="horizontal">
 
                     <Button
-                        android:id="@+id/interstitialSim_fill3D"
+                        android:id="@+id/interstitialSim_fill3C"
                         android:layout_width="70dp"
                         android:layout_height="30dp"
                         android:layout_marginRight="5dp"
@@ -352,7 +352,7 @@
                         android:textColor="#FFFFFF" />
 
                     <Button
-                        android:id="@+id/interstitialSim_fill2D"
+                        android:id="@+id/interstitialSim_fill2C"
                         android:layout_width="70dp"
                         android:layout_height="30dp"
                         android:layout_marginRight="5dp"
@@ -362,7 +362,7 @@
                         android:textColor="#FFFFFF" />
 
                     <Button
-                        android:id="@+id/interstitialSim_fill1D"
+                        android:id="@+id/interstitialSim_fill1C"
                         android:layout_width="70dp"
                         android:layout_height="30dp"
                         android:layout_marginRight="5dp"
@@ -372,7 +372,7 @@
                         android:textColor="#FFFFFF" />
 
                     <Button
-                        android:id="@+id/interstitialSim_noFillD"
+                        android:id="@+id/interstitialSim_noFillC"
                         android:layout_width="70dp"
                         android:layout_height="30dp"
                         android:layout_marginRight="5dp"
@@ -382,7 +382,7 @@
                         android:textColor="#FFFFFF" />
 
                     <Button
-                        android:id="@+id/interstitialSim_OtherD"
+                        android:id="@+id/interstitialSim_OtherC"
                         android:layout_width="70dp"
                         android:layout_height="30dp"
                         android:background="@drawable/button"
@@ -563,11 +563,11 @@
 
 
                 <TextView
-                    android:id="@+id/rewardedSim_statusD"
+                    android:id="@+id/rewardedSim_statusC"
                     android:layout_width="match_parent"
                     android:layout_height="30dp"
                     android:singleLine="false"
-                    android:text="D"
+                    android:text="C"
                     android:textAlignment="center"
                     android:textColor="#000000" />
 
@@ -577,7 +577,7 @@
                     android:orientation="horizontal">
 
                     <Button
-                        android:id="@+id/rewardedSim_fill3D"
+                        android:id="@+id/rewardedSim_fill3C"
                         android:layout_width="70dp"
                         android:layout_height="30dp"
                         android:layout_marginRight="5dp"
@@ -587,7 +587,7 @@
                         android:textColor="#FFFFFF" />
 
                     <Button
-                        android:id="@+id/rewardedSim_fill2D"
+                        android:id="@+id/rewardedSim_fill2C"
                         android:layout_width="70dp"
                         android:layout_height="30dp"
                         android:layout_marginRight="5dp"
@@ -597,7 +597,7 @@
                         android:textColor="#FFFFFF" />
 
                     <Button
-                        android:id="@+id/rewardedSim_fill1D"
+                        android:id="@+id/rewardedSim_fill1C"
                         android:layout_width="70dp"
                         android:layout_height="30dp"
                         android:layout_marginRight="5dp"
@@ -607,7 +607,7 @@
                         android:textColor="#FFFFFF" />
 
                     <Button
-                        android:id="@+id/rewardedSim_noFillD"
+                        android:id="@+id/rewardedSim_noFillC"
                         android:layout_width="70dp"
                         android:layout_height="30dp"
                         android:layout_marginRight="5dp"
@@ -617,7 +617,7 @@
                         android:textColor="#FFFFFF" />
 
                     <Button
-                        android:id="@+id/rewardedSim_OtherD"
+                        android:id="@+id/rewardedSim_OtherC"
                         android:layout_width="70dp"
                         android:layout_height="30dp"
                         android:background="@drawable/button"
